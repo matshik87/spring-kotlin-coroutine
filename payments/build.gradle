@@ -1,0 +1,35 @@
+plugins {
+    id("org.jetbrains.kotlin.jvm") version("$kotlinVersion")
+    id("org.springframework.boot") version("$springBootVersion")
+    id("io.spring.dependency-management") version("$springDependencyManagement")
+}
+
+group = "org.bronco.payments"
+
+kotlin {
+    jvmToolchain {
+        languageVersion = JavaLanguageVersion.of(22)
+    }
+}
+
+dependencies {
+
+    implementation("org.springframework.boot:spring-boot-starter-web") {
+        exclude group: "org.springframework.boot", module: "spring-boot-starter-tomcat"
+    }
+    implementation("org.springframework.boot:spring-boot-starter-undertow")
+//    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    runtimeOnly("org.springframework.boot:spring-boot-devtools")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$openApiVersion")
+//    implementation("org.liquibase:liquibase-core")
+//    implementation("org.springframework.kafka:spring-kafka")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+//    testImplementation("org.springframework.kafka:spring-kafka-test")
+}
+
+test {
+    useJUnitPlatform()
+}
