@@ -1,0 +1,26 @@
+services:
+  payments-db:
+    container_name: payments_db
+    image: postgres:16.8-alpine3.20
+    environment:
+      POSTGRES_USER: payments-user
+      POSTGRES_PASSWORD: payments-passwd
+      POSTGRES_DB: payments_local
+    ports:
+      - "5432:5432"
+    volumes:
+      - payments-db:/var/lib/postgresql/data
+    networks:
+      - payments-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d payments-schema" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+networks:
+  payments-network:
+    driver: bridge
+
+volumes:
+  payments-db:

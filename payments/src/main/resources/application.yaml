@@ -7,6 +7,15 @@ server:
 spring:
   application:
     name: payment-service
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    url: ${DB_URL}
+  liquibase:
+    change-log: classpath:/db/changelogs/changelog-master.xml
+    liquibase-schema: ${DB_SCHEMA}
+    default-schema: ${DB_SCHEMA}
 
 management:
   server:
