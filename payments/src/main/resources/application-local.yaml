@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    username: payments-user
+    password: payments-passwd
+    url: jdbc:postgresql://localhost:5432/payments_local
+  liquibase:
+    default-schema: payments_local
+    change-log: classpath:db/changelogs/changelog-local.xml
+    liquibase-schema: payments_local

@@ -1,0 +1,39 @@
+server:
+  port: 8080
+  http2:
+    enabled: true
+  servlet:
+    context-path: /api
+spring:
+  application:
+    name: payment-service
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    url: ${DB_URL}
+  liquibase:
+    change-log: classpath:/db/changelogs/changelog-master.xml
+    liquibase-schema: ${DB_SCHEMA}
+    default-schema: ${DB_SCHEMA}
+
+management:
+  server:
+    port: 9000
+    base-path: /app
+  endpoints:
+    web:
+      base-path: /
+      exposure:
+        include: health,metrics,prometheus,info
+  info:
+    env:
+      enabled: true
+    os:
+      enabled: true
+    build:
+      enabled: true
+springdoc:
+  api-docs:
+    enabled: true
+    path: /swagger
