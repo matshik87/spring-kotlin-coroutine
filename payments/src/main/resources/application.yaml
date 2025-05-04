@@ -1,0 +1,24 @@
+server:
+  port: 8080
+  http2:
+    enabled: true
+spring:
+  application:
+    name: payment-service
+
+management:
+  server:
+    port: 9000
+    base-path: /app
+  endpoints:
+    web:
+      base-path: /
+      exposure:
+        include: health,metrics,prometheus,info
+  info:
+    env:
+      enabled: true
+    os:
+      enabled: true
+    build:
+      enabled: true
