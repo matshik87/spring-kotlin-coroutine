@@ -24,3 +24,7 @@ management:
       enabled: true
     build:
       enabled: true
+springdoc:
+  api-docs:
+    enabled: true
+    path: /swagger

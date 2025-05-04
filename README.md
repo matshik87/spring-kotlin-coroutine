@@ -30,3 +30,8 @@ for sure:
  - postgresql
  - coroutines
 Maybe some day a helm template
+
+#Swagger
+Swagger doc can be found under /api/swagger-ui/index.html.
+Swagger definition can be found under /api/swagger
+
