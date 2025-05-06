@@ -10,6 +10,7 @@ services:
       - "5432:5432"
     volumes:
       - payments-db:/var/lib/postgresql/data
+      - ./init-schema.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - payments-network
     healthcheck:
