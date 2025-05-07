@@ -7,11 +7,6 @@ server:
 spring:
   application:
     name: payment-service
-  datasource:
-    driver-class-name: org.postgresql.Driver
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    url: ${DB_URL}
   liquibase:
     change-log: classpath:/db/changelogs/changelog-master.xml
     liquibase-schema: ${DB_SCHEMA}
@@ -37,3 +32,13 @@ springdoc:
   api-docs:
     enabled: true
     path: /swagger
+
+payments:
+  data-source:
+    schema: ${DB_SCHEMA}
+    jdbc-url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    maxPoolSize: 10
+    pool-name: payments-service-pool
+    dialect: POSTGRES

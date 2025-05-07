@@ -1,10 +1,16 @@
 spring:
-  datasource:
-    driver-class-name: org.postgresql.Driver
-    username: payments-user
-    password: payments-passwd
-    url: jdbc:postgresql://localhost:5432/payments_local
   liquibase:
     default-schema: payments_local
     change-log: classpath:db/changelogs/changelog-local.xml
     liquibase-schema: payments_local
+
+payments:
+  data-source:
+    schema: payments_local
+    jdbc-url: jdbc:postgresql://localhost:5432/payments_local
+    username: payments-user
+    password: payments-passwd
+    minPoolSize: 5
+    maxPoolSize: 10
+    pool-name: payments-service-pool
+    dialect: POSTGRES
