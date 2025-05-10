@@ -2,6 +2,7 @@ plugins {
     id("org.jetbrains.kotlin.jvm") version("$kotlinVersion")
     id("org.springframework.boot") version("$springBootVersion")
     id("io.spring.dependency-management") version("$springDependencyManagement")
+    id "org.jooq.jooq-codegen-gradle" version("$jooqVersion")
 }
 
 group = "org.bronco.payments"
@@ -28,6 +29,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$openApiVersion")
     runtimeOnly("org.postgresql:postgresql")
+    jooqCodegen("org.postgresql:postgresql")
     implementation("org.liquibase:liquibase-core")
 //    implementation("org.springframework.kafka:spring-kafka")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -36,4 +38,47 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+jooq {
+    configuration {
+        logging = "INFO"
+        jdbc {
+            driver = "org.postgresql.Driver"
+            url="jdbc-url"
+            user = "user"
+            password = "password"
+        }
+        generator {
+            name = "org.jooq.codegen.KotlinGenerator"
+            database {
+                name = "org.jooq.meta.postgres.PostgresDatabase"
+                excludes = """
+                    DATABASECHANGELOG
+                  | DATABASECHANGELOGLOCK
+                  | DEFAULT_CATALOG
+                """
+                inputSchema = "payments"
+            }
+            strategy {
+                name = 'org.jooq.codegen.DefaultGeneratorStrategy'
+            }
+            generate {
+                implicitJoinPathsAsKotlinProperties = true
+                kotlinSetterJvmNameAnnotationsOnIsPrefix = true
+                pojosAsKotlinDataClasses = true
+                kotlinNotNullPojoAttributes = false
+                kotlinNotNullRecordAttributes = false
+                kotlinNotNullInterfaceAttributes = false
+                kotlinDefaultedNullablePojoAttributes = true
+                kotlinDefaultedNullableRecordAttributes = true
+                routines = true
+            }
+            target {
+                packageName = "${group}.jooq.model"
+                directory = 'target/generated-schema'
+            }
+        }
+
+    }
 }
