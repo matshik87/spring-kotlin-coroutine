@@ -2,12 +2,12 @@ spring:
   liquibase:
     default-schema: payments_local
     change-log: classpath:db/changelogs/changelog-local.xml
-    liquibase-schema: payments_local
+    liquibase-schema: payments
 
 payments:
   data-source:
-    schema: payments_local
-    jdbc-url: jdbc:postgresql://localhost:5432/payments_local
+    schema: payments
+    jdbc-url: jdbc:postgresql://localhost:5432/payments
     username: payments-user
     password: payments-passwd
     minPoolSize: 5

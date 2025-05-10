@@ -1,1 +1,1 @@
-create schema payments_local;
+create schema payments;

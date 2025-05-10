@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_USER: payments-user
       POSTGRES_PASSWORD: payments-passwd
-      POSTGRES_DB: payments_local
+      POSTGRES_DB: payments
     ports:
       - "5432:5432"
     volumes:
