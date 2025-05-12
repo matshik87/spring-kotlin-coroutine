@@ -29,7 +29,8 @@ open class PaymentsCustomerService(
                 email = email,
                 phoneNumber = phoneNumber,
                 secondaryPhoneNumber = secondaryPhoneNumber,
-                errorMessage = null
+                errorMessage = null,
+                passwordChangeRequired = if (password == null) true else false
             )
         }
 
@@ -38,7 +39,8 @@ open class PaymentsCustomerService(
             customerId = customerId,
             login = login,
             email = email,
-            activeAccount = isActive,
+            activeAccount = true,
+            requiresPasswordChange = passwordChangeRequired ?: true,
             errorDescription = errorMessage,
         )
 

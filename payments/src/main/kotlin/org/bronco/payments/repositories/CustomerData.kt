@@ -27,7 +27,8 @@ data class CustomerData(
     val phoneNumber: String?,
     @Column(name = "secondary_phone_number")
     val secondaryPhoneNumber: String? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val passwordChangeRequired: Boolean? = null
 ) {
     val isActive: Boolean
         get() = password != null

@@ -7,5 +7,6 @@ data class CreateCustomerResponse(
     val login: String,
     val email: String, //wont customerId and login be enough?
     val activeAccount: Boolean,
+    val requiresPasswordChange: Boolean,
     val errorDescription: String?
 )

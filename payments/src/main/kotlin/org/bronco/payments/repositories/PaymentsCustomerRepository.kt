@@ -37,7 +37,7 @@ open class PaymentsCustomerRepository(
                         if (affectedRows != 1) {
                             customerData.copy(errorMessage = "A new customer could not be created")
                         } else {
-                            record.into(CustomerData::class.java)
+                            record.into(CustomerData::class.java).copy(passwordChangeRequired = customerData.passwordChangeRequired)
                         }
                     } ?: customerData.copy(errorMessage = "A new customer could not be created")
 
