@@ -1,4 +1,4 @@
-package org.bronco.payments.services
+package org.bronco.payments.services.customer
 
 import org.bronco.payments.controllers.api.CreateCustomerRequest
 import org.bronco.payments.controllers.api.CreateCustomerResponse

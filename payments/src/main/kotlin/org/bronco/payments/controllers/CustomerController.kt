@@ -3,7 +3,7 @@ package org.bronco.payments.controllers
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.bronco.payments.controllers.api.CreateCustomerRequest
 import org.bronco.payments.controllers.api.CreateCustomerResponse
-import org.bronco.payments.services.CustomerService
+import org.bronco.payments.services.customer.CustomerService
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity

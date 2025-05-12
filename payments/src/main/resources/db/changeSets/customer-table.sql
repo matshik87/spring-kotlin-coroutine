@@ -9,7 +9,7 @@ CREATE TABLE payments.customer
     dob                    date         not null,
     nationality            varchar(2)   not null,
     login                  varchar(10)  not null,
-    password               varchar(45)  not null,
+    password               varchar(100)  not null,
     email                  varchar(100) not null,
     phone_number           varchar(20)  not null,
     secondary_phone_number varchar(20)  not null,

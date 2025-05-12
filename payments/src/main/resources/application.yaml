@@ -42,3 +42,7 @@ payments:
     maxPoolSize: 10
     pool-name: payments-service-pool
     dialect: POSTGRES
+  password:
+    default: passwd-1234
+    algorithm: SHA-512
+    charset: UTF-8
