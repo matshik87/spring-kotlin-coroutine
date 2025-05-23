@@ -29,7 +29,4 @@ data class CustomerData(
     val secondaryPhoneNumber: String? = null,
     val errorMessage: String? = null,
     val passwordChangeRequired: Boolean? = null
-) {
-    val isActive: Boolean
-        get() = password != null
-}
+) {}

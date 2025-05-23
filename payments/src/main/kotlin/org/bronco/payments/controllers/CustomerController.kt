@@ -1,6 +1,7 @@
 package org.bronco.payments.controllers
 
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
 import org.bronco.payments.controllers.api.CreateCustomerRequest
 import org.bronco.payments.controllers.api.CreateCustomerResponse
 import org.bronco.payments.services.customer.CustomerService
@@ -20,7 +21,7 @@ class CustomerController(
 ) {
     //TODO: swagger annotations
     @PostMapping(consumes = [MediaType.APPLICATION_JSON_VALUE])
-    fun createCustomer(@RequestBody payload: CreateCustomerRequest): ResponseEntity<CreateCustomerResponse> {
+    fun createCustomer(@Valid @RequestBody payload: CreateCustomerRequest): ResponseEntity<CreateCustomerResponse> {
         val result = customerService.createNewCustomer(payload)
         return ResponseEntity(result, result.errorDescription?.let { HttpStatus.BAD_REQUEST } ?: HttpStatus.OK)
     }
