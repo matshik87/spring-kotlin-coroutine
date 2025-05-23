@@ -1,9 +1,8 @@
 package org.bronco.payments.controllers.api
 
-import com.fasterxml.jackson.annotation.JsonFormat
+import org.bronco.payments.validation.customer.IsAdult
 import org.bronco.payments.validation.customer.NameComponent
 import org.bronco.payments.validation.customer.NameComponentType
-import java.time.LocalDate
 
 //TODO: add request validation
 class CreateCustomerRequest(
@@ -13,8 +12,8 @@ class CreateCustomerRequest(
     val middleName: String?,
     @NameComponent(type = NameComponentType.LAST_NAME,max = 60)
     val lastName: String,
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
-    val dateOfBirth: LocalDate,
+    @IsAdult
+    val dateOfBirth: String,
     val nationality: String, //most probably an enum
     val password: String?,
     val email: String,

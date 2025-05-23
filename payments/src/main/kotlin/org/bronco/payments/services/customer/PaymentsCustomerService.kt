@@ -1,5 +1,6 @@
 package org.bronco.payments.services.customer
 
+import org.bronco.payments.DateUtils.convertStringToLocalDate
 import org.bronco.payments.controllers.api.CreateCustomerRequest
 import org.bronco.payments.controllers.api.CreateCustomerResponse
 import org.bronco.payments.repositories.CustomerData
@@ -22,7 +23,7 @@ open class PaymentsCustomerService(
                 firstName = firstName,
                 middleName = middleName,
                 lastName = lastName,
-                dateOfBirth = dateOfBirth,
+                dateOfBirth = convertStringToLocalDate(dateOfBirth),
                 nationality = nationality,
                 login = loginService.generateLogin { firstName + middleName + lastName + email },
                 password = passwordService.encode(password),
