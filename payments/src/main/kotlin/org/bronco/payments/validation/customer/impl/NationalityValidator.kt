@@ -6,5 +6,5 @@ import org.bronco.payments.utils.CountryUtils
 import org.bronco.payments.validation.customer.ValidNationality
 
 class NationalityValidator : ConstraintValidator<ValidNationality, String> {
-    override fun isValid(p0: String?, p1: ConstraintValidatorContext?): Boolean = CountryUtils.isCountrySupported(p0)
+    override fun isValid(value: String?, context: ConstraintValidatorContext?): Boolean = CountryUtils.isCountrySupported(value)
 }

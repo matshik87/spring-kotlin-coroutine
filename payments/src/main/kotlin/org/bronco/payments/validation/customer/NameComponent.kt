@@ -2,6 +2,7 @@ package org.bronco.payments.validation.customer
 
 import jakarta.validation.Constraint
 import jakarta.validation.Payload
+import org.bronco.payments.validation.customer.impl.NameComponentValidation
 import kotlin.reflect.KClass
 
 @Constraint(validatedBy = [NameComponentValidation::class])

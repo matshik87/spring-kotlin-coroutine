@@ -3,6 +3,7 @@ package org.bronco.payments.validation.customer.impl
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import org.bronco.payments.utils.DateUtils.convertStringToLocalDate
+import org.bronco.payments.utils.resetDefaultContext
 import org.bronco.payments.validation.customer.IsAdult
 import java.time.LocalDate
 
@@ -17,10 +18,7 @@ class AdultValidation : ConstraintValidator<IsAdult, String> {
             val adultAge = LocalDate.now().minusYears(MIN_AGE)
             adultAge == date || date.isBefore(LocalDate.now().minusYears(MIN_AGE))
         } ?: run {
-            context?.apply {
-                disableDefaultConstraintViolation()
-                buildConstraintViolationWithTemplate(NO_DOB_ERROR).addConstraintViolation()
-            }
+            context?.resetDefaultContext(NO_DOB_ERROR, populateAsTemplate = false)
             false
         }
     }

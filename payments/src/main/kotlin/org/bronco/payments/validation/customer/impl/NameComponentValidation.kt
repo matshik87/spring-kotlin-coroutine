@@ -1,7 +1,10 @@
-package org.bronco.payments.validation.customer
+package org.bronco.payments.validation.customer.impl
 
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
+import org.bronco.payments.utils.resetDefaultContext
+import org.bronco.payments.validation.customer.NameComponent
+import org.bronco.payments.validation.customer.NameComponentType
 
 class NameComponentValidation : ConstraintValidator<NameComponent, String> {
     private lateinit var nameComponentType: NameComponentType
@@ -21,18 +24,17 @@ class NameComponentValidation : ConstraintValidator<NameComponent, String> {
         } else {
             when {
                 value.isNullOrBlank() -> {
-                    context.resetDefaultViolation("name.${nameComponentType.propertyName}.empty")
+                    context.resetDefaultContext("name.${nameComponentType.propertyName}.empty")
                     false
                 }
 
                 !value.isLengthInRange(minLength, maxLength) -> {
-                    context.resetDefaultViolation("name.${nameComponentType.propertyName}.length")
+                    context.resetDefaultContext("name.${nameComponentType.propertyName}.length")
                     false
                 }
 
                 !value.isCamelCase() -> {
-                    context.disableDefaultConstraintViolation()
-                    context.resetDefaultViolation("name.${nameComponentType.propertyName}.invalid")
+                    context.resetDefaultContext("name.${nameComponentType.propertyName}.invalid")
                     false
                 }
 
@@ -48,9 +50,4 @@ class NameComponentValidation : ConstraintValidator<NameComponent, String> {
     private fun String?.isLengthInRange(minLength: Int, maxLength: Int): Boolean = this?.let { value ->
         value.length in minLength..maxLength
     } ?: false
-
-    private fun ConstraintValidatorContext.resetDefaultViolation(template: String) {
-        this.disableDefaultConstraintViolation()
-        this.buildConstraintViolationWithTemplate("{${template}}").addConstraintViolation()
-    }
 }
