@@ -77,7 +77,7 @@ jooq {
                 routines = true
             }
             target {
-                packageName = "${group}.jooq.model"
+                packageName = "${group}.schema.jooq.model"
                 directory = 'target/generated-schema'
             }
         }

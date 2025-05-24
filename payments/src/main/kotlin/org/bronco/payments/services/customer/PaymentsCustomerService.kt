@@ -25,6 +25,7 @@ open class PaymentsCustomerService(
                 lastName = lastName,
                 dateOfBirth = convertStringToLocalDate(dateOfBirth),
                 nationality = nationality,
+                countryOfResidence = if (countryOfResidence.isNullOrBlank()) nationality else countryOfResidence,
                 login = loginService.generateLogin { firstName + middleName + lastName + email },
                 password = passwordService.encode(password),
                 email = email,

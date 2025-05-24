@@ -1,6 +1,6 @@
 package org.bronco.payments.repositories
 
-import org.bronco.payments.jooq.model.tables.Customer
+import org.bronco.payments.schema.jooq.model.tables.Customer
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
 import org.slf4j.LoggerFactory
@@ -24,6 +24,7 @@ open class PaymentsCustomerRepository(
                         lastName = customerData.lastName
                         dob = customerData.dateOfBirth
                         nationality = customerData.nationality
+                        residencyCountryCode = customerData.countryOfResidence
                         login = customerData.login
                         password = customerData.password
                         email = customerData.email

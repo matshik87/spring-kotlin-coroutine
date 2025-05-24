@@ -17,6 +17,8 @@ data class CustomerData(
     val dateOfBirth: LocalDate?,
     @Column(name = "nationality")
     val nationality: String?,
+    @Column(name = "residency_country_code")
+    val countryOfResidence: String,
     @Column(name = "login")
     val login: String,
     @Column(name = "password")

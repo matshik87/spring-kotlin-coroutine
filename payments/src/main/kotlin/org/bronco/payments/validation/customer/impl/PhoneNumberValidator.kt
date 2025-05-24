@@ -13,7 +13,6 @@ class PhoneNumberValidator : ConstraintValidator<ValidPhoneNumber, CreateCustome
         private val SECONDARY_PHONE_INVALID_TEMPLATE = "phone.secondary.invalid"
     }
 
-    //TODO: dodaj kraj pobytu(wymagane, zapis na baze itd)
     override fun isValid(value: CreateCustomerRequest?, context: ConstraintValidatorContext?): Boolean {
         return value?.let { request ->
             val countryCode = if (request.countryOfResidence.isNullOrBlank()) value.nationality else request.countryOfResidence
