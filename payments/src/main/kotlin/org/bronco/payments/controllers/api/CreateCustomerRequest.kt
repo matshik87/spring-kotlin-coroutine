@@ -13,8 +13,10 @@ class CreateCustomerRequest(
     val lastName: String,
     @IsAdult
     val dateOfBirth: String,
-    @ValidNationality
+    @CountryCode(optional = false)
     val nationality: String,
+    @CountryCode(message = "{residency.country.invalid}")
+    val countryOfResidence: String?,
     val password: String?,
     @field:Email(message = "{email.invalid}")
     val email: String,
