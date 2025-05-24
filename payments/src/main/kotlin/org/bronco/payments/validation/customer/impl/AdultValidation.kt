@@ -2,7 +2,7 @@ package org.bronco.payments.validation.customer.impl
 
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
-import org.bronco.payments.DateUtils.convertStringToLocalDate
+import org.bronco.payments.utils.DateUtils.convertStringToLocalDate
 import org.bronco.payments.validation.customer.IsAdult
 import java.time.LocalDate
 

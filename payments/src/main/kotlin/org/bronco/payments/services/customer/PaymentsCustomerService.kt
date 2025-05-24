@@ -1,6 +1,6 @@
 package org.bronco.payments.services.customer
 
-import org.bronco.payments.DateUtils.convertStringToLocalDate
+import org.bronco.payments.utils.DateUtils.convertStringToLocalDate
 import org.bronco.payments.controllers.api.CreateCustomerRequest
 import org.bronco.payments.controllers.api.CreateCustomerResponse
 import org.bronco.payments.repositories.CustomerData
