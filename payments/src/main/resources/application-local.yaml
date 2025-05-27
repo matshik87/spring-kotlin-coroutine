@@ -14,3 +14,20 @@ payments:
     maxPoolSize: 10
     pool-name: payments-service-pool
     dialect: POSTGRES
+  kafka:
+    bootstrap-servers: localhost:19092
+    consumers:
+      create-topics: false
+      containers:
+        default-container:
+          concurrency: 2
+      topics:
+        create-customer:
+          topic-name: payments.customer.create
+          concurrency: ${payments.kafka.consumers.containers.default-container.concurrency}
+          bootstrap-servers: ${payments.kafka.bootstrap-servers}
+          group-id: payments.customer-management
+          auto-offset-reset: latest
+          auto-commit: false
+          key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          value-deserializer: org.apache.kafka.common.serialization.StringDeserializer

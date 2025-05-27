@@ -11,6 +11,10 @@ spring:
     change-log: classpath:/db/changelogs/changelog-master.xml
     liquibase-schema: ${DB_SCHEMA}
     default-schema: ${DB_SCHEMA}
+  kafka:
+    bootstrap-servers: localhost:19092
+    admin:
+      client-id: payments-client
 
 management:
   server:
@@ -46,3 +50,21 @@ payments:
     default: passwd-1234
     algorithm: SHA-512
     charset: UTF-8
+  kafka:
+    bootstrap-servers: ${BOOTSTRAP_SERVERS}
+    consumers:
+      create-topics: false
+      containers:
+        default-container:
+          concurrency: 2
+      topics:
+        create-customer:
+          topic-name: payments.customer.create
+          concurrency: ${payments.kafka.consumers.containers.default-container.concurrency}
+          bootstrap-servers: ${payments.kafka.bootstrap-servers}
+          container: defaultContainer
+          group-id: payments.customer-management
+          auto-offset-reset: latest
+          auto-commit: false
+          key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
