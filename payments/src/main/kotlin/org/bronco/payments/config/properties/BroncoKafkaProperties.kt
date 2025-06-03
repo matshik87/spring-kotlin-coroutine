@@ -29,6 +29,7 @@ class KafkaContainerDetails(
 ) {}
 
 class KafkaTopicsProperties {
+    var list: List<String> = emptyList()
     var createCustomer: KafkaTopicProperties = KafkaTopicProperties()
 }
 

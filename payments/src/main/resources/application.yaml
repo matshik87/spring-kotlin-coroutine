@@ -58,6 +58,8 @@ payments:
         default-container:
           concurrency: 2
       topics:
+        list:
+          - "${payments.kafka.consumers.topics.create-customer.topic-name}"
         create-customer:
           topic-name: payments.customer.create
           concurrency: ${payments.kafka.consumers.containers.default-container.concurrency}

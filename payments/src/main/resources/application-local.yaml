@@ -17,7 +17,7 @@ payments:
   kafka:
     bootstrap-servers: localhost:19092
     consumers:
-      create-topics: false
+      create-topics: true
       containers:
         default-container:
           concurrency: 2
