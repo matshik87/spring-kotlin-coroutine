@@ -27,7 +27,7 @@ open class KafkaConfiguration {
     }
 
     @Bean
-    open fun createCustomerListenerContainer(
+    open fun customerListenerContainer(
         createCustomerConsumerFactory: ConsumerFactory<String, String>, kafkaProperties: BroncoKafkaProperties
     ): ConcurrentKafkaListenerContainerFactory<String, String> {
         val kafkaConsumerFactory = ConcurrentKafkaListenerContainerFactory<String, String>().apply {
