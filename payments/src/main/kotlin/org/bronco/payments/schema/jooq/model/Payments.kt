@@ -7,6 +7,7 @@ package org.bronco.payments.schema.jooq.model
 import kotlin.collections.List
 
 import org.bronco.payments.schema.jooq.model.tables.Customer
+import org.bronco.payments.schema.jooq.model.tables.ProcessProgress
 import org.jooq.Catalog
 import org.jooq.Table
 import org.jooq.impl.SchemaImpl
@@ -30,9 +31,15 @@ open class Payments : SchemaImpl("payments", DefaultCatalog.DEFAULT_CATALOG) {
      */
     val CUSTOMER: Customer get() = Customer.CUSTOMER
 
+    /**
+     * The table <code>payments.process_progress</code>.
+     */
+    val PROCESS_PROGRESS: ProcessProgress get() = ProcessProgress.PROCESS_PROGRESS
+
     override fun getCatalog(): Catalog = DefaultCatalog.DEFAULT_CATALOG
 
     override fun getTables(): List<Table<*>> = listOf(
-        Customer.CUSTOMER
+        Customer.CUSTOMER,
+        ProcessProgress.PROCESS_PROGRESS
     )
 }

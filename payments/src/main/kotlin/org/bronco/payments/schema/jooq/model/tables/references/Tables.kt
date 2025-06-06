@@ -5,6 +5,7 @@ package org.bronco.payments.schema.jooq.model.tables.references
 
 
 import org.bronco.payments.schema.jooq.model.tables.Customer
+import org.bronco.payments.schema.jooq.model.tables.ProcessProgress
 
 
 
@@ -12,3 +13,8 @@ import org.bronco.payments.schema.jooq.model.tables.Customer
  * The table <code>payments.customer</code>.
  */
 val CUSTOMER: Customer = Customer.CUSTOMER
+
+/**
+ * The table <code>payments.process_progress</code>.
+ */
+val PROCESS_PROGRESS: ProcessProgress = ProcessProgress.PROCESS_PROGRESS
