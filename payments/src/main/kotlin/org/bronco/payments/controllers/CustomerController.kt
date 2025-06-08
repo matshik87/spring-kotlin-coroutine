@@ -21,8 +21,8 @@ class CustomerController(
 ) {
     //TODO: swagger annotations
     @PostMapping(consumes = [MediaType.APPLICATION_JSON_VALUE])
-    fun createCustomer(@Valid @RequestBody payload: CreateCustomerRequest): ResponseEntity<CreateCustomerResponse> {
-        val result = customerService.createNewCustomer(payload)
+    suspend fun createCustomer(@Valid @RequestBody payload: CreateCustomerRequest): ResponseEntity<CreateCustomerResponse> {
+        val result = customerService.createNewCustomerSuspended(payload)
         return ResponseEntity(result, result.errorDescription?.let { HttpStatus.BAD_REQUEST } ?: HttpStatus.OK)
     }
 }

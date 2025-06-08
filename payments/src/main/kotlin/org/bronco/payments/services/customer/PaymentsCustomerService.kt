@@ -1,19 +1,29 @@
 package org.bronco.payments.services.customer
 
-import org.bronco.payments.utils.DateUtils.convertStringToLocalDate
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.bronco.payments.controllers.api.CreateCustomerRequest
 import org.bronco.payments.controllers.api.CreateCustomerResponse
 import org.bronco.payments.repositories.CustomerData
 import org.bronco.payments.repositories.CustomerRepository
+import org.bronco.payments.repositories.progress.ProgressKey
+import org.bronco.payments.repositories.progress.ProgressRepository
 import org.bronco.payments.services.login.PaymentsLoginService
 import org.bronco.payments.services.password.PasswordService
+import org.bronco.payments.services.processes.model.ProcessType
+import org.bronco.payments.services.processes.model.ProgressType
+import org.bronco.payments.utils.DateUtils.convertStringToLocalDate
 import org.springframework.stereotype.Service
+import java.util.*
 
 @Service
 open class PaymentsCustomerService(
     private val repository: CustomerRepository,
     private val passwordService: PasswordService,
     private val loginService: PaymentsLoginService,
+    private val progressRepository: ProgressRepository,
 ) : CustomerService {
 
     private val CreateCustomerRequest.toNewCustomerData: CustomerData
@@ -49,4 +59,29 @@ open class PaymentsCustomerService(
     override fun createNewCustomer(customerRequest: CreateCustomerRequest): CreateCustomerResponse {
         return repository.createUser(customerRequest.toNewCustomerData).toCreateCustomerResponse
     }
+
+    override suspend fun createNewCustomerSuspended(customerRequest: CreateCustomerRequest): CreateCustomerResponse =
+        withContext(CoroutineName("createNewCustomerOrRetrieveExisting")) {
+            val result = repository.findByLoginAndEmailSuspend(null, customerRequest.email) ?: run {
+                val customerId = UUID.randomUUID()
+                val processId = UUID.randomUUID()
+                val key = ProgressKey(processId, ProcessType.CREATE_CUSTOMER)
+
+                val userCreation = async {
+                    val result = repository.createUserSuspend(customerId, customerRequest.toNewCustomerData)
+                    launch {
+                        progressRepository.initiateProgress(key, customerId)
+                    }
+                    result
+                }
+                val customerData = userCreation.await()
+                launch {
+                    val progressType = if (customerData.errorMessage.isNullOrBlank()) ProgressType.FINISHED
+                    else ProgressType.FINISHED_WITH_ERROR
+                    progressRepository.updateProgress(key, progressType, customerId, customerData.errorMessage)
+                }
+                customerData
+            }
+            result.toCreateCustomerResponse
+        }
 }
