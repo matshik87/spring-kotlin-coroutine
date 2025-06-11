@@ -60,29 +60,42 @@ open class PaymentsCustomerService(
         return repository.createUser(customerRequest.toNewCustomerData).toCreateCustomerResponse
     }
 
-    override suspend fun createNewCustomerSuspended(processId: UUID, customerRequest: CreateCustomerRequest): CreateCustomerResponse =
+    override suspend fun createNewCustomerSuspended(
+        processId: UUID,
+        customerRequest: CreateCustomerRequest
+    ): CreateCustomerResponse =
         withContext(CoroutineName("createNewCustomerOrRetrieveExisting")) {
-            val findById = repository.findByLoginAndEmailSuspend(null, customerRequest.email)
-            findById?.let { entity ->
-                val key = ProgressKey(processId, ProcessName.CREATE_CUSTOMER)
-                progressRepository.updateProgress(key, ProgressType.ALREADY_PROCESSED, entity.customerId, null)
-            }
-            val result = findById ?: run {
-                val customerId = UUID.randomUUID()
 
-                val userCreation = async {
-                    val result = repository.createUserSuspend(customerId, customerRequest.toNewCustomerData)
-                    result
-                }
-                val customerData = userCreation.await()
-                launch {
-                    val progressType = if (customerData.errorMessage.isNullOrBlank()) ProgressType.FINISHED
-                    else ProgressType.FINISHED_WITH_ERROR
-                    val key = ProgressKey(processId, ProcessName.CREATE_CUSTOMER)
-                    progressRepository.updateProgress(key, progressType, customerId, customerData.errorMessage)
-                }
-                customerData
+            val customerId = UUID.randomUUID()
+
+            val userCreation = async {
+                val result = repository.createUserSuspend(customerId, customerRequest.toNewCustomerData)
+                result
             }
-            result.toCreateCustomerResponse
+            val customerData = userCreation.await()
+            launch {
+                val progressType = if (customerData.errorMessage.isNullOrBlank()) ProgressType.FINISHED
+                else ProgressType.FINISHED_WITH_ERROR
+                val key = ProgressKey(processId, ProcessName.CREATE_CUSTOMER)
+                progressRepository.updateProgress(key, progressType, customerId, customerData.errorMessage)
+            }
+            customerData.toCreateCustomerResponse
         }
+
+    override suspend fun executeIfFound(
+        login: String?,
+        email: String?,
+        processing: suspend (CustomerData) -> Unit
+    ): CustomerData? {
+        val findById = repository.findByLoginAndEmailSuspend(login, email)
+        return findById?.let { entity ->
+            processing(entity)
+            entity
+        }
+    }
+
+    override suspend fun executeIfFound(
+        email: String?,
+        processing: suspend (CustomerData) -> Unit
+    ): CustomerData? = executeIfFound(null, email, processing)
 }

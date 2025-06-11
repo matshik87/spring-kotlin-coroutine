@@ -3,6 +3,7 @@ package org.bronco.payments.services.kafka.consumer.customer
 import com.fasterxml.jackson.databind.ObjectReader
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.bronco.payments.controllers.api.CreateCustomerRequest
 import org.bronco.payments.repositories.progress.ProgressKey
@@ -58,14 +59,19 @@ class CustomerKafkaService(
                     null, null
                 )
                 val payload = objectReader.readValue(record.value(), CreateCustomerRequest::class.java)
-                customerService.createNewCustomerSuspended(processId, payload)
+                customerService.executeIfFound(payload.email) { entity ->
+                    val key = ProgressKey(processId, ProcessName.CREATE_CUSTOMER)
+                    progressRepository.updateProgress(key, ProgressType.ALREADY_PROCESSED, entity.customerId, null)
+                } ?: customerService.createNewCustomerSuspended(processId, payload)
             }.onFailure { throwable ->
-                progressRepository.updateProgress(
-                    ProgressKey(processId, ProcessName.CREATE_CUSTOMER),
-                    ProgressType.FINISHED_WITH_ERROR,
-                    null,
-                    throwable.message
-                )
+                launch {
+                    progressRepository.updateProgress(
+                        ProgressKey(processId, ProcessName.CREATE_CUSTOMER),
+                        ProgressType.FINISHED_WITH_ERROR,
+                        null,
+                        throwable.message
+                    )
+                }
             }
 
             processDetails.progress == ProgressType.FINISHED.name -> logger.info("Process ${processDetails.id} was finalized")
