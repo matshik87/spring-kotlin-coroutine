@@ -1,7 +1,10 @@
 package org.bronco.payments.repositories.progress
 
+import kotlinx.coroutines.future.await
 import org.bronco.payments.schema.jooq.model.tables.records.ProcessProgressRecord
 import org.bronco.payments.schema.jooq.model.tables.references.PROCESS_PROGRESS
+import org.bronco.payments.services.processes.model.ProcessName
+import org.bronco.payments.services.processes.model.ProcessProgressDetails
 import org.bronco.payments.services.processes.model.ProgressType
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
@@ -18,26 +21,38 @@ open class ProcessesProgressRepository(
 ) : ProgressRepository {
     companion object {
         private val logger: Logger = LoggerFactory.getLogger(ProcessesProgressRepository::class.java)
+        private fun ProcessProgressRecord.toProgressDetails(): ProcessProgressDetails = ProcessProgressDetails(
+            this.processId!!, this.processName!!, this.progress!!, this.entityId, this.details
+        )
     }
 
     override suspend fun initiateProgress(
         key: ProgressKey,
         id: UUID?,
         progressDetails: String?
-    ) {
-        runInTransaction { transaction ->
-            val progress = ProgressType.IN_PROGRESS
-            val record =
+    ): ProcessProgressDetails {
+        return runInTransaction { transaction ->
+            val progress = ProgressType.INITIALIZED
+            val recordLambda =
                 prepareRecord(key, progress, id, details = progressDetails, creationDate = LocalDateTime.now())
-            transaction.batchInsert(record(transaction))
+            val record = recordLambda(transaction)
+            transaction.batchInsert(record)
                 .executeAsync()
                 .handleAsync { results, throwable ->
                     if (throwable != null) {
                         logger.error("Adding progress ${progress} for [${key}, id: ${id}] has failed.", throwable)
+                        ProcessProgressDetails(
+                            key.id,
+                            key.name.name,
+                            ProgressType.FINISHED_WITH_ERROR.name,
+                            id,
+                            throwable.message
+                        )
                     } else {
                         logger.info("Adding progress for [${key}, id: ${id}] with $progress has completed: ${results.first() > 0}.")
+                        record.toProgressDetails()
                     }
-                }
+                }.await()
         }
     }
 
@@ -62,6 +77,16 @@ open class ProcessesProgressRepository(
                         logger.info("Updating progress for [${key}, id: ${id}] with $progress has completed: ${results.first() > 0}.")
                     }
                 }
+        }
+    }
+
+    override suspend fun retrieveProcessDetails(processId: UUID?, processName: ProcessName): ProcessProgressDetails? {
+        return runInTransaction { transaction ->
+            transaction.selectFrom(PROCESS_PROGRESS)
+                .where(
+                    PROCESS_PROGRESS.PROCESS_ID.eq(processId).and(PROCESS_PROGRESS.PROCESS_NAME.eq(processName.name))
+                )
+                .fetchOneInto(ProcessProgressDetails::class.java)
         }
     }
 

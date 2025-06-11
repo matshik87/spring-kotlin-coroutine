@@ -8,9 +8,8 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.annotation.EnableKafka
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
-import org.springframework.kafka.core.ConsumerFactory
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory
-import org.springframework.kafka.core.KafkaAdmin
+import org.springframework.kafka.core.*
+
 
 @EnableKafka
 @Configuration
@@ -53,5 +52,15 @@ open class KafkaConfiguration {
             .forEach { newTopic ->
                 kafkaAdmin.createOrModifyTopics(newTopic)
             }
+    }
+
+    @Bean
+    open fun defaultKafkaProducerFactory(kafkaProperties: BroncoKafkaProperties): ProducerFactory<String, String> {
+        return DefaultKafkaProducerFactory(kafkaProperties.producers.producerConfig())
+    }
+
+    @Bean
+    open fun defaultKafkaTemplate(producerFactory: ProducerFactory<String, String>): KafkaTemplate<String, String> {
+        return KafkaTemplate(producerFactory)
     }
 }

@@ -12,7 +12,7 @@ import org.bronco.payments.repositories.progress.ProgressKey
 import org.bronco.payments.repositories.progress.ProgressRepository
 import org.bronco.payments.services.login.PaymentsLoginService
 import org.bronco.payments.services.password.PasswordService
-import org.bronco.payments.services.processes.model.ProcessType
+import org.bronco.payments.services.processes.model.ProcessName
 import org.bronco.payments.services.processes.model.ProgressType
 import org.bronco.payments.utils.DateUtils.convertStringToLocalDate
 import org.springframework.stereotype.Service
@@ -60,24 +60,25 @@ open class PaymentsCustomerService(
         return repository.createUser(customerRequest.toNewCustomerData).toCreateCustomerResponse
     }
 
-    override suspend fun createNewCustomerSuspended(customerRequest: CreateCustomerRequest): CreateCustomerResponse =
+    override suspend fun createNewCustomerSuspended(processId: UUID, customerRequest: CreateCustomerRequest): CreateCustomerResponse =
         withContext(CoroutineName("createNewCustomerOrRetrieveExisting")) {
-            val result = repository.findByLoginAndEmailSuspend(null, customerRequest.email) ?: run {
+            val findById = repository.findByLoginAndEmailSuspend(null, customerRequest.email)
+            findById?.let { entity ->
+                val key = ProgressKey(processId, ProcessName.CREATE_CUSTOMER)
+                progressRepository.updateProgress(key, ProgressType.ALREADY_PROCESSED, entity.customerId, null)
+            }
+            val result = findById ?: run {
                 val customerId = UUID.randomUUID()
-                val processId = UUID.randomUUID()
-                val key = ProgressKey(processId, ProcessType.CREATE_CUSTOMER)
 
                 val userCreation = async {
                     val result = repository.createUserSuspend(customerId, customerRequest.toNewCustomerData)
-                    launch {
-                        progressRepository.initiateProgress(key, customerId)
-                    }
                     result
                 }
                 val customerData = userCreation.await()
                 launch {
                     val progressType = if (customerData.errorMessage.isNullOrBlank()) ProgressType.FINISHED
                     else ProgressType.FINISHED_WITH_ERROR
+                    val key = ProgressKey(processId, ProcessName.CREATE_CUSTOMER)
                     progressRepository.updateProgress(key, progressType, customerId, customerData.errorMessage)
                 }
                 customerData

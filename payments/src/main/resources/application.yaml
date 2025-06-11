@@ -52,6 +52,12 @@ payments:
     charset: UTF-8
   kafka:
     bootstrap-servers: ${BOOTSTRAP_SERVERS}
+    producers:
+      bootstrap-servers: ${payments.kafka.bootstrap-servers}
+      client-id: payments-client
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      create-customer: ${payments.kafka.consumers.topics.create-customer.topic-name}
     consumers:
       create-topics: false
       containers:
