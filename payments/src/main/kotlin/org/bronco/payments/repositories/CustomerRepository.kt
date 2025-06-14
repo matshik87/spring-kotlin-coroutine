@@ -7,4 +7,5 @@ interface CustomerRepository {
     suspend fun createUserSuspend(customerId: UUID, customerData: CustomerData): CustomerData
     fun findByLoginAndEmail(login: String?, email: String?): CustomerData?
     suspend fun findByLoginAndEmailSuspend(login: String?, email: String?): CustomerData?
+    suspend fun findById(customerId: UUID): CustomerData?
 }

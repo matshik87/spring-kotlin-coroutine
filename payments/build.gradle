@@ -22,12 +22,12 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-jooq")
     implementation "org.jooq:jooq-kotlin-coroutines:${jooqVersion}"
     implementation("jakarta.persistence:jakarta.persistence-api:3.2.0")
-//    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("io.micrometer:micrometer-registry-prometheus")
     runtimeOnly("org.springframework.boot:spring-boot-devtools")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$openApiVersion")
     runtimeOnly("org.postgresql:postgresql")

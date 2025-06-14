@@ -9,19 +9,23 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.bronco.payments.controllers.api.CreateCustomerRequest
+import org.bronco.payments.controllers.api.RetrieveCustomerResponse
+import org.bronco.payments.services.customer.CustomerService
 import org.bronco.payments.services.kafka.producer.customer.CustomerKafkaProducer
 import org.bronco.payments.services.processes.model.ProcessProgressDetails
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.util.*
 import io.swagger.v3.oas.annotations.parameters.RequestBody as ApiRequestBody
 
 @Tag(name = "customers", description = "Customer API deals with customer management")
 @RestController
 @RequestMapping("customers")
 class CustomerController(
-    private val customerKafkaProducer: CustomerKafkaProducer
+    private val customerKafkaProducer: CustomerKafkaProducer,
+    private val customerService: CustomerService
 ) {
     @Operation(
         method = "createCustomer",
@@ -75,7 +79,7 @@ class CustomerController(
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(implementation = Any::class)
+                        schema = Schema(implementation = RetrieveCustomerResponse::class)
                     )
                 ]
             ),
@@ -91,8 +95,10 @@ class CustomerController(
             )
         ]
     )
+    //TODO: add id validation, convertion from string to uuid
+    //TODO: add controller advice to support error response for resource not found
     @GetMapping(path = ["{id}"], produces = [MediaType.APPLICATION_JSON_VALUE])
-    suspend fun retrieveCustomer(@PathVariable("id") customerId: String): ResponseEntity<Any> {
-        return ResponseEntity.ok().build()
+    suspend fun retrieveCustomer(@PathVariable("id") customerId: UUID): ResponseEntity<RetrieveCustomerResponse> {
+        return ResponseEntity.ok(customerService.retrieveCustomerById(customerId))
     }
 }

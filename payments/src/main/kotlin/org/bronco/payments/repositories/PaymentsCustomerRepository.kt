@@ -2,6 +2,7 @@ package org.bronco.payments.repositories
 
 import kotlinx.coroutines.future.await
 import org.bronco.payments.schema.jooq.model.tables.Customer
+import org.bronco.payments.schema.jooq.model.tables.references.CUSTOMER
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
 import org.jooq.kotlin.coroutines.transactionCoroutine
@@ -111,6 +112,16 @@ open class PaymentsCustomerRepository(
                 .onFailure { exception ->
                     logger.error("Error on retrieving customer data", exception)
                 }.getOrNull()
+        }
+    }
+
+    override suspend fun findById(customerId: UUID): CustomerData? {
+        return context.transactionCoroutine { transactional ->
+            DSL.using(transactional).selectFrom(CUSTOMER)
+                .where(CUSTOMER.ID.eq(customerId))
+                .fetchAsync()
+                .await()
+                .firstOrNull()?.into(CustomerData::class.java)
         }
     }
 }

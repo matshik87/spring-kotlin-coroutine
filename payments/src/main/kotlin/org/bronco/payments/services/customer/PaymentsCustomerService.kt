@@ -6,6 +6,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.bronco.payments.controllers.api.CreateCustomerRequest
 import org.bronco.payments.controllers.api.CreateCustomerResponse
+import org.bronco.payments.controllers.api.RetrieveCustomerResponse
+import org.bronco.payments.model.ResourceNotFoundException
+import org.bronco.payments.model.ResourceType
 import org.bronco.payments.repositories.CustomerData
 import org.bronco.payments.repositories.CustomerRepository
 import org.bronco.payments.repositories.progress.ProgressKey
@@ -25,6 +28,9 @@ open class PaymentsCustomerService(
     private val loginService: PaymentsLoginService,
     private val progressRepository: ProgressRepository,
 ) : CustomerService {
+    companion object {
+        private fun isPasswordChangeRequired(password: String?) = password.isNullOrBlank()
+    }
 
     private val CreateCustomerRequest.toNewCustomerData: CustomerData
         get() {
@@ -42,7 +48,7 @@ open class PaymentsCustomerService(
                 phoneNumber = phoneNumber,
                 secondaryPhoneNumber = secondaryPhoneNumber,
                 errorMessage = null,
-                passwordChangeRequired = if (password == null) true else false
+                passwordChangeRequired = isPasswordChangeRequired(password)
             )
         }
 
@@ -54,6 +60,21 @@ open class PaymentsCustomerService(
             activeAccount = true,
             requiresPasswordChange = passwordChangeRequired ?: true,
             errorDescription = errorMessage,
+        )
+    private val CustomerData.toRetrievalResponse: RetrieveCustomerResponse
+        get() = RetrieveCustomerResponse(
+            customerId = null,
+            firstName = firstName,
+            middleName = middleName,
+            lastName = lastName,
+            dateOfBirth = dateOfBirth,
+            nationality = nationality,
+            countryOfResidence = countryOfResidence,
+            login = login,
+            email = email,
+            phoneNumber = phoneNumber,
+            secondaryPhoneNumber = secondaryPhoneNumber,
+            passwordChangeRequired = isPasswordChangeRequired(password)
         )
 
     override suspend fun createNewCustomer(
@@ -94,4 +115,8 @@ open class PaymentsCustomerService(
         email: String?,
         processing: suspend (CustomerData) -> Unit
     ): CustomerData? = executeIfFound(null, email, processing)
+
+    override suspend fun retrieveCustomerById(customerId: UUID): RetrieveCustomerResponse =
+        (repository.findById(customerId)?.toRetrievalResponse)
+        ?: throw ResourceNotFoundException(customerId, ResourceType.CUSTOMER)
 }
