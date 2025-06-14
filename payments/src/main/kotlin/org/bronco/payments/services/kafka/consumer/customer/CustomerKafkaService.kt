@@ -62,7 +62,7 @@ class CustomerKafkaService(
                 customerService.executeIfFound(payload.email) { entity ->
                     val key = ProgressKey(processId, ProcessName.CREATE_CUSTOMER)
                     progressRepository.updateProgress(key, ProgressType.ALREADY_PROCESSED, entity.customerId, null)
-                } ?: customerService.createNewCustomerSuspended(processId, payload)
+                } ?: customerService.createNewCustomer(processId, payload)
             }.onFailure { throwable ->
                 launch {
                     progressRepository.updateProgress(

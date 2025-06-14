@@ -56,11 +56,7 @@ open class PaymentsCustomerService(
             errorDescription = errorMessage,
         )
 
-    override fun createNewCustomer(customerRequest: CreateCustomerRequest): CreateCustomerResponse {
-        return repository.createUser(customerRequest.toNewCustomerData).toCreateCustomerResponse
-    }
-
-    override suspend fun createNewCustomerSuspended(
+    override suspend fun createNewCustomer(
         processId: UUID,
         customerRequest: CreateCustomerRequest
     ): CreateCustomerResponse =
