@@ -24,7 +24,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody as ApiRequestBody
 @Tag(name = "customers", description = "Customer API deals with customer management")
 @RestController
 @RequestMapping("customers")
-class CustomerController(
+open class CustomerController(
     private val customerKafkaProducer: CustomerKafkaProducer,
     private val customerService: CustomerService
 ) {
@@ -96,8 +96,8 @@ class CustomerController(
             )
         ]
     )
-    //TODO: add controller advice to support error response for resource not found
     @GetMapping(path = ["{id}"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Valid
     suspend fun retrieveCustomer(@ValidUuid @PathVariable("id") customerId: String): ResponseEntity<RetrieveCustomerResponse> {
         return ResponseEntity.ok(customerService.retrieveCustomerById(customerId.toUuid()))
     }
