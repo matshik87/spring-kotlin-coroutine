@@ -13,11 +13,12 @@ import org.bronco.payments.controllers.api.RetrieveCustomerResponse
 import org.bronco.payments.services.customer.CustomerService
 import org.bronco.payments.services.kafka.producer.customer.CustomerKafkaProducer
 import org.bronco.payments.services.processes.model.ProcessProgressDetails
+import org.bronco.payments.utils.toUuid
+import org.bronco.payments.validation.customer.ValidUuid
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import java.util.*
 import io.swagger.v3.oas.annotations.parameters.RequestBody as ApiRequestBody
 
 @Tag(name = "customers", description = "Customer API deals with customer management")
@@ -95,10 +96,9 @@ class CustomerController(
             )
         ]
     )
-    //TODO: add id validation, convertion from string to uuid
     //TODO: add controller advice to support error response for resource not found
     @GetMapping(path = ["{id}"], produces = [MediaType.APPLICATION_JSON_VALUE])
-    suspend fun retrieveCustomer(@PathVariable("id") customerId: UUID): ResponseEntity<RetrieveCustomerResponse> {
-        return ResponseEntity.ok(customerService.retrieveCustomerById(customerId))
+    suspend fun retrieveCustomer(@ValidUuid @PathVariable("id") customerId: String): ResponseEntity<RetrieveCustomerResponse> {
+        return ResponseEntity.ok(customerService.retrieveCustomerById(customerId.toUuid()))
     }
 }
