@@ -1,4 +1,4 @@
-package org.bronco.payments.repositories
+package org.bronco.payments.repositories.customer
 
 import java.util.*
 

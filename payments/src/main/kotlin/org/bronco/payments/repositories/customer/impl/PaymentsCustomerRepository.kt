@@ -1,6 +1,8 @@
-package org.bronco.payments.repositories
+package org.bronco.payments.repositories.customer.impl
 
 import kotlinx.coroutines.future.await
+import org.bronco.payments.repositories.customer.CustomerData
+import org.bronco.payments.repositories.customer.CustomerRepository
 import org.bronco.payments.schema.jooq.model.tables.Customer
 import org.bronco.payments.schema.jooq.model.tables.references.CUSTOMER
 import org.jooq.DSLContext

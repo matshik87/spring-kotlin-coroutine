@@ -1,6 +1,8 @@
-package org.bronco.payments.repositories.progress
+package org.bronco.payments.repositories.progress.impl
 
 import kotlinx.coroutines.future.await
+import org.bronco.payments.repositories.progress.ProgressKey
+import org.bronco.payments.repositories.progress.ProgressRepository
 import org.bronco.payments.schema.jooq.model.tables.records.ProcessProgressRecord
 import org.bronco.payments.schema.jooq.model.tables.references.PROCESS_PROGRESS
 import org.bronco.payments.services.processes.model.ProcessName
