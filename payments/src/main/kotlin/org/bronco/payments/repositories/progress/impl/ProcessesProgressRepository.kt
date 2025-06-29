@@ -78,7 +78,7 @@ open class ProcessesProgressRepository(
                     } else {
                         logger.info("Updating progress for [${key}, id: ${id}] with $progress has completed: ${results.first() > 0}.")
                     }
-                }
+                }.await()
         }
     }
 
