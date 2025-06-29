@@ -31,7 +31,10 @@ open class KafkaConfiguration {
     ): ConcurrentKafkaListenerContainerFactory<String, String> {
         val kafkaConsumerFactory = ConcurrentKafkaListenerContainerFactory<String, String>().apply {
             this.consumerFactory = createCustomerConsumerFactory
-            setConcurrency(kafkaProperties.consumers.topics.createCustomer.concurrency)
+            val concurrency = kafkaProperties.consumers.topics.createCustomer.concurrency
+            if (concurrency > 0) {
+                setConcurrency(kafkaProperties.consumers.topics.createCustomer.concurrency)
+            }
         }
 
         return kafkaConsumerFactory

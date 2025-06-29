@@ -70,7 +70,6 @@ payments:
           topic-name: payments.customer.create
           concurrency: ${payments.kafka.consumers.containers.default-container.concurrency}
           bootstrap-servers: ${payments.kafka.bootstrap-servers}
-          container: defaultContainer
           group-id: payments.customer-management
           auto-offset-reset: latest
           auto-commit: false

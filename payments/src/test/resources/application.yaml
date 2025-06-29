@@ -1,0 +1,37 @@
+spring:
+  liquibase:
+    change-log: classpath:/db/changelogs/changelog-master.xml
+  kafka:
+    bootstrap-servers: localhost:19092
+
+payments:
+  data-source:
+    maxPoolSize: 10
+    dialect: POSTGRES
+  password:
+    default: test-passwd-1234
+    algorithm: SHA-512
+    charset: UTF-8
+# commenting out kafka config till testcontainer is introduced
+#  kafka:
+#    bootstrap-servers: localhost:2345
+#    consumers:
+#      create-topics: false
+#      containers:
+#        default-container:
+#          concurrency: 1
+
+containers:
+  db:
+    enabled: true
+    image: postgres:16.8-alpine3.20
+    user: payments-test-username
+    password: payments-test-passwd
+    name: payments
+    destroy-on-exit: true
+    properties:
+      databaseName: payments.data-source.schema,spring.liquibase.liquibase-schema,spring.liquibase.default-schema
+      databaseUrl: payments.data-source.jdbc-url
+      username: payments.data-source.username
+      password: payments.data-source.password
+      init-script: db/init-schema.sql

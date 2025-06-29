@@ -37,6 +37,9 @@ dependencies {
     implementation("com.googlecode.libphonenumber:libphonenumber:9.0.5")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 //    testImplementation("org.springframework.kafka:spring-kafka-test")
+
+//    test containers dependencies
+    testImplementation("org.testcontainers:postgresql:1.21.1")
 }
 
 test {

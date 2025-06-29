@@ -9,7 +9,7 @@ import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy
 import javax.sql.DataSource
 
 @Configuration
-open class DataSourceConfigurationConfiguration {
+open class DataSourceConfiguration {
     @Bean
     open fun dataSource(properties: PaymentsDataSourceProperties): DataSource =
         HikariDataSource(properties.toHikariConfig())
