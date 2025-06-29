@@ -3,7 +3,7 @@ package org.bronco.payments.services.customer
 import org.bronco.payments.controllers.api.CreateCustomerRequest
 import org.bronco.payments.controllers.api.CreateCustomerResponse
 import org.bronco.payments.controllers.api.RetrieveCustomerResponse
-import org.bronco.payments.repositories.CustomerData
+import org.bronco.payments.repositories.customer.CustomerData
 import java.util.*
 
 interface CustomerService {

@@ -9,8 +9,8 @@ import org.bronco.payments.controllers.api.CreateCustomerResponse
 import org.bronco.payments.controllers.api.RetrieveCustomerResponse
 import org.bronco.payments.model.ResourceNotFoundException
 import org.bronco.payments.model.ResourceType
-import org.bronco.payments.repositories.CustomerData
-import org.bronco.payments.repositories.CustomerRepository
+import org.bronco.payments.repositories.customer.CustomerData
+import org.bronco.payments.repositories.customer.CustomerRepository
 import org.bronco.payments.repositories.progress.ProgressKey
 import org.bronco.payments.repositories.progress.ProgressRepository
 import org.bronco.payments.services.login.PaymentsLoginService
