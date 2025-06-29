@@ -24,9 +24,9 @@ import java.util.*
 @EnableAutoConfiguration(
     exclude = [KafkaAutoConfiguration::class]
 )
-@Import(ProcessesProgressRepository::class)
+@Import(ProcessProgressRepository::class)
 @ContextConfiguration(initializers = [PostgreSqlInitializer::class])
-open class ProcessesProgressRepositoryDataTest {
+open class ProcessProgressRepositoryDataTest {
     @Autowired
     private lateinit var repository: ProgressRepository
 

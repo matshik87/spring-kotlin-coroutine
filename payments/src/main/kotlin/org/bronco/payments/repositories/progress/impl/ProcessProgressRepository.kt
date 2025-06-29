@@ -18,11 +18,11 @@ import java.time.LocalDateTime
 import java.util.*
 
 @Repository
-open class ProcessesProgressRepository(
+open class ProcessProgressRepository(
     private val dslContext: DSLContext
 ) : ProgressRepository {
     companion object {
-        private val logger: Logger = LoggerFactory.getLogger(ProcessesProgressRepository::class.java)
+        private val logger: Logger = LoggerFactory.getLogger(ProcessProgressRepository::class.java)
         private fun ProcessProgressRecord.toProgressDetails(): ProcessProgressDetails = ProcessProgressDetails(
             this.processId!!, this.processName!!, this.progress!!, this.entityId, this.details
         )
