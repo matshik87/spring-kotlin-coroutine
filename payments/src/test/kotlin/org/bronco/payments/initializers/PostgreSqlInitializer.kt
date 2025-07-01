@@ -1,4 +1,4 @@
-package org.bronco.payments.repositories.progress.impl
+package org.bronco.payments.initializers
 
 import org.springframework.context.ApplicationContextInitializer
 import org.springframework.context.ConfigurableApplicationContext

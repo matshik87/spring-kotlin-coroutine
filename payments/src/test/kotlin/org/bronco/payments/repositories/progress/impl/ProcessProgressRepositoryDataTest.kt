@@ -2,6 +2,7 @@ package org.bronco.payments.repositories.progress.impl
 
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions
+import org.bronco.payments.initializers.PostgreSqlInitializer
 import org.bronco.payments.repositories.progress.ProgressKey
 import org.bronco.payments.repositories.progress.ProgressRepository
 import org.bronco.payments.schema.jooq.model.tables.references.PROCESS_PROGRESS
