@@ -55,7 +55,7 @@ open class PaymentsCustomerRepositoryTest {
 
     @Test
     fun findById_whenCustomerExist_thenEntityIsReturned() = runTest {
-        val customer = generateCustomer()
+        val customer = generateCustomer(UUID.randomUUID())
 
         val result = repository.findById(customer.customerId!!)
 
@@ -63,15 +63,15 @@ open class PaymentsCustomerRepositoryTest {
     }
 
     @Test
-    fun findByLoginAndEmailSuspend_whenCustomerCouldNotBeFound_thenNullIsReturned() = runTest {
+    fun findByLoginAndEmail_whenCustomerCouldNotBeFound_thenNullIsReturned() = runTest {
         val result = repository.findByLoginAndEmail("12345", "test@email.com")
 
         assertThat(result).isNull()
     }
 
     @Test
-    fun findByLoginAndEmailSuspend_whenPartialMatchByEmail_thenEntityIsReturned() = runTest {
-        val customer = generateCustomer()
+    fun findByLoginAndEmail_whenPartialMatchByEmail_thenEntityIsReturned() = runTest {
+        val customer = generateCustomer(UUID.randomUUID())
 
         val result = repository.findByLoginAndEmail(null, customer.email)
 
@@ -79,8 +79,8 @@ open class PaymentsCustomerRepositoryTest {
     }
 
     @Test
-    fun findByLoginAndEmailSuspend_whenPartialMatchByLogin_thenEntityIsReturned() = runTest {
-        val customer = generateCustomer()
+    fun findByLoginAndEmail_whenPartialMatchByLogin_thenEntityIsReturned() = runTest {
+        val customer = generateCustomer(UUID.randomUUID())
 
         val result = repository.findByLoginAndEmail(customer.login, null)
 
@@ -88,33 +88,52 @@ open class PaymentsCustomerRepositoryTest {
     }
 
     @Test
-    fun findByLoginAndEmailSuspend_whenFullMatchByLogin_thenEntityIsReturned() = runTest {
-        val customer = generateCustomer()
+    fun findByLoginAndEmailwhenFullMatchByLogin_thenEntityIsReturned() = runTest {
+        val customer = generateCustomer(UUID.randomUUID())
 
         val result = repository.findByLoginAndEmail(customer.login, customer.email)
 
         assertThat(result).isEqualTo(customer)
     }
 
-    suspend fun generateCustomer(): CustomerData = coroutineScope {
-        val randomStringUtils = RandomStringUtils.secure()
-        val nationality = "UK"
+    @Test
+    fun createUser_whenCustomerWasCreated_thenEntityIsReturned() = runTest {
+        val customerId = UUID.randomUUID()
+        val customer = generateCustomerData()
+
+        val result = repository.createUser(customerId, customer)
+
+        assertThat(result).isEqualTo(customer.copy(customerId = customerId))
+    }
+
+    @Test
+    fun createUser_whenCustomerCouldNotBePersisted_thenResponseIncludesErrorMessage() = runTest {
+        val customerId = UUID.randomUUID()
+        val customer = generateCustomerData().copy(firstName = RandomStringUtils.secure().nextAscii(41))
+
+        val result = repository.createUser(customerId, customer)
+
+        assertThat(result.errorMessage).isNotBlank()
+        assertThat(repository.findById(customerId)).isNull()
+    }
+
+    private suspend fun generateCustomer(customerId: UUID? = null): CustomerData = coroutineScope {
+        val randomizedCustomerData = generateCustomerData(customerId)
         dslContext.transactionCoroutine { transactional ->
             val transaction: DSLContext = DSL.using(transactional)
             val record: CustomerRecord = transaction.newRecord(CUSTOMER)
-            record.id = UUID.randomUUID()
-            record.firstName = randomStringUtils.nextAscii(10)
-                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-            record.lastName = randomStringUtils.nextAscii(10)
-                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-            record.dob = LocalDate.now().minusYears(18).minusDays(1)
-            record.nationality = nationality
-            record.residencyCountryCode = nationality
-            record.login = randomStringUtils.nextAscii(10)
-            record.password = randomStringUtils.nextAlphabetic(15)
-            record.email = "${randomStringUtils.nextAscii(5, 10)}@test.com"
-            record.phoneNumber = "+${randomStringUtils.nextNumeric(8)}"
-            record.secondaryPhoneNumber = "+${randomStringUtils.nextNumeric(8)}"
+            record.id = randomizedCustomerData.customerId
+            record.firstName = randomizedCustomerData.firstName
+            record.middleName = randomizedCustomerData.middleName
+            record.lastName = randomizedCustomerData.lastName
+            record.dob = randomizedCustomerData.dateOfBirth
+            record.nationality = randomizedCustomerData.nationality
+            record.residencyCountryCode = randomizedCustomerData.countryOfResidence
+            record.login = randomizedCustomerData.login
+            record.password = randomizedCustomerData.password
+            record.email = randomizedCustomerData.email
+            record.phoneNumber = randomizedCustomerData.phoneNumber
+            record.secondaryPhoneNumber = randomizedCustomerData.secondaryPhoneNumber
 
             transaction.batchInsert(record).executeAsync()
                 .handleAsync { result, throwable ->
@@ -129,6 +148,27 @@ open class PaymentsCustomerRepositoryTest {
                 .await()
             record.into(CustomerData::class.java)
         }
+    }
+
+    private suspend fun generateCustomerData(customerId: UUID? = null): CustomerData = coroutineScope {
+        val randomStringUtils = RandomStringUtils.secure()
+        val nationality = "UK"
+        CustomerData(
+            customerId = customerId,
+            firstName = randomStringUtils.nextAscii(10)
+                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
+            middleName = null,
+            lastName = randomStringUtils.nextAscii(10)
+                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
+            dateOfBirth = LocalDate.now().minusYears(18).minusDays(1),
+            nationality = nationality,
+            countryOfResidence = nationality,
+            login = randomStringUtils.nextAscii(10),
+            password = randomStringUtils.nextAlphabetic(15),
+            email = "${randomStringUtils.nextAscii(5, 10)}@test.com",
+            phoneNumber = "+${randomStringUtils.nextNumeric(8)}",
+            secondaryPhoneNumber = "+${randomStringUtils.nextNumeric(8)}"
+        )
 
     }
 }
