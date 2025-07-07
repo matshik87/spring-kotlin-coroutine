@@ -18,7 +18,7 @@ open class PaymentsCustomerRepository(
 ) : CustomerRepository {
     private val logger = LoggerFactory.getLogger(PaymentsCustomerRepository::class.java)
 
-    override suspend fun createUserSuspend(customerId: UUID, customerData: CustomerData): CustomerData {
+    override suspend fun createUser(customerId: UUID, customerData: CustomerData): CustomerData {
         val result = context.transactionCoroutine { transactional ->
             val transaction = DSL.using(transactional)
             val record = transaction.newRecord(Customer.CUSTOMER)
@@ -55,7 +55,7 @@ open class PaymentsCustomerRepository(
         return result
     }
 
-    override suspend fun findByLoginAndEmailSuspend(login: String?, email: String?): CustomerData? {
+    override suspend fun findByLoginAndEmail(login: String?, email: String?): CustomerData? {
         return context.transactionCoroutine { transactional ->
             val query = DSL.using(transactional).selectQuery(Customer.CUSTOMER)
             login?.let { query.addConditions(Customer.CUSTOMER.LOGIN.eq(login)) }

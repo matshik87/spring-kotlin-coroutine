@@ -86,7 +86,7 @@ open class PaymentsCustomerService(
             val customerId = UUID.randomUUID()
 
             val userCreation = async {
-                val result = repository.createUserSuspend(customerId, customerRequest.toNewCustomerData)
+                val result = repository.createUser(customerId, customerRequest.toNewCustomerData)
                 result
             }
             val customerData = userCreation.await()
@@ -104,7 +104,7 @@ open class PaymentsCustomerService(
         email: String?,
         processing: suspend (CustomerData) -> Unit
     ): CustomerData? {
-        val findById = repository.findByLoginAndEmailSuspend(login, email)
+        val findById = repository.findByLoginAndEmail(login, email)
         return findById?.let { entity ->
             processing(entity)
             entity

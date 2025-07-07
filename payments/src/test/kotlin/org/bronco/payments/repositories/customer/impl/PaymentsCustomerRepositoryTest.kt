@@ -64,7 +64,7 @@ open class PaymentsCustomerRepositoryTest {
 
     @Test
     fun findByLoginAndEmailSuspend_whenCustomerCouldNotBeFound_thenNullIsReturned() = runTest {
-        val result = repository.findByLoginAndEmailSuspend("12345", "test@email.com")
+        val result = repository.findByLoginAndEmail("12345", "test@email.com")
 
         assertThat(result).isNull()
     }
@@ -73,7 +73,7 @@ open class PaymentsCustomerRepositoryTest {
     fun findByLoginAndEmailSuspend_whenPartialMatchByEmail_thenEntityIsReturned() = runTest {
         val customer = generateCustomer()
 
-        val result = repository.findByLoginAndEmailSuspend(null, customer.email)
+        val result = repository.findByLoginAndEmail(null, customer.email)
 
         assertThat(result).isEqualTo(customer)
     }
@@ -82,7 +82,7 @@ open class PaymentsCustomerRepositoryTest {
     fun findByLoginAndEmailSuspend_whenPartialMatchByLogin_thenEntityIsReturned() = runTest {
         val customer = generateCustomer()
 
-        val result = repository.findByLoginAndEmailSuspend(customer.login, null)
+        val result = repository.findByLoginAndEmail(customer.login, null)
 
         assertThat(result).isEqualTo(customer)
     }
@@ -91,7 +91,7 @@ open class PaymentsCustomerRepositoryTest {
     fun findByLoginAndEmailSuspend_whenFullMatchByLogin_thenEntityIsReturned() = runTest {
         val customer = generateCustomer()
 
-        val result = repository.findByLoginAndEmailSuspend(customer.login, customer.email)
+        val result = repository.findByLoginAndEmail(customer.login, customer.email)
 
         assertThat(result).isEqualTo(customer)
     }
