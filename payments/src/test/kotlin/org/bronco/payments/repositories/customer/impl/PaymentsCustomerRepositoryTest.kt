@@ -62,6 +62,40 @@ open class PaymentsCustomerRepositoryTest {
         assertThat(result).isEqualTo(customer)
     }
 
+    @Test
+    fun findByLoginAndEmailSuspend_whenCustomerCouldNotBeFound_thenNullIsReturned() = runTest {
+        val result = repository.findByLoginAndEmailSuspend("12345", "test@email.com")
+
+        assertThat(result).isNull()
+    }
+
+    @Test
+    fun findByLoginAndEmailSuspend_whenPartialMatchByEmail_thenEntityIsReturned() = runTest {
+        val customer = generateCustomer()
+
+        val result = repository.findByLoginAndEmailSuspend(null, customer.email)
+
+        assertThat(result).isEqualTo(customer)
+    }
+
+    @Test
+    fun findByLoginAndEmailSuspend_whenPartialMatchByLogin_thenEntityIsReturned() = runTest {
+        val customer = generateCustomer()
+
+        val result = repository.findByLoginAndEmailSuspend(customer.login, null)
+
+        assertThat(result).isEqualTo(customer)
+    }
+
+    @Test
+    fun findByLoginAndEmailSuspend_whenFullMatchByLogin_thenEntityIsReturned() = runTest {
+        val customer = generateCustomer()
+
+        val result = repository.findByLoginAndEmailSuspend(customer.login, customer.email)
+
+        assertThat(result).isEqualTo(customer)
+    }
+
     suspend fun generateCustomer(): CustomerData = coroutineScope {
         val randomStringUtils = RandomStringUtils.secure()
         val nationality = "UK"
