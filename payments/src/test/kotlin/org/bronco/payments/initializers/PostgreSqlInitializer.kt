@@ -6,7 +6,6 @@ import org.bronco.payments.initializers.base.JdbcProperties
 import org.springframework.context.ConfigurableApplicationContext
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.MountableFile
-import java.util.concurrent.atomic.AtomicBoolean
 
 private const val defaultPostgresImage = "postgres:13-alpine"
 
@@ -26,8 +25,6 @@ open class PostgreSqlInitializer : BaseContainerInitializer<PostgreSQLContainer<
         private val usernameProperty = "containers.db.properties.username"
         private val passwordProperty = "containers.db.properties.password"
         private val initScriptProperty = "containers.db.properties.init-script"
-        private val postgresContainer: ScopedValue<PostgreSQLContainer<*>> = ScopedValue.newInstance()
-        private val containerCreated = AtomicBoolean(false)
     }
 
     override fun createContainer(): (ContainerProperties) -> PostgreSQLContainer<*> =
@@ -55,8 +52,8 @@ open class PostgreSqlInitializer : BaseContainerInitializer<PostgreSQLContainer<
         val environment = applicationContext.environment
         val propertySources = environment.propertySources
         val runContainer = environment.getProperty(isEnabled, defaultBooleanValue).toBooleanStrict()
-        if (runContainer && !containerCreated.get()) {
-            val container = createContainer()(
+        if (runContainer) {
+            val container = getContainer {
                 ContainerProperties(
                     dockerImage = environment.getProperty(dockerImage, defaultPostgresImage),
                     jdbcProperties = JdbcProperties(
@@ -68,27 +65,25 @@ open class PostgreSqlInitializer : BaseContainerInitializer<PostgreSQLContainer<
                             ?.let { resourceName -> applicationContext.getResource(resourceName).file.path }
                     )
                 )
-            )
-            containerCreated.set(true)
+            }
             if (environment.getProperty(destroyOnExit, defaultBooleanValue).toBooleanStrict()) {
                 Runtime.getRuntime().addShutdownHook(Thread(container::stop))
             }
-            val scopedValue = ScopedValue.where(postgresContainer, container)
 
             bindPropertySource(propertySources) {
-                val databaseName = { scopedValue.get(postgresContainer).databaseName }
+                val databaseName = { container.databaseName }
                 buildMap {
                     environment.getProperty(databaseNameProperty, defaultValue).split(',').map { it.trim() }
                         .map { key -> key to databaseName }.forEach { entry -> put(entry.first, entry.second) }
                     put(
                         environment.getProperty(databaseUrlProperty, defaultValue),
-                        { scopedValue.get(postgresContainer).getJdbcUrl() })
+                        { container.getJdbcUrl() })
                     put(
                         environment.getProperty(usernameProperty, defaultValue),
-                        { scopedValue.get(postgresContainer).username })
+                        { container.username })
                     put(
                         environment.getProperty(passwordProperty, defaultValue),
-                        { scopedValue.get(postgresContainer).password })
+                        { container.password })
                 }
             }
         }

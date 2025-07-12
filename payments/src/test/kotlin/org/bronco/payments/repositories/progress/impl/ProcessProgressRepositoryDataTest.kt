@@ -2,7 +2,6 @@ package org.bronco.payments.repositories.progress.impl
 
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions
-import org.bronco.payments.initializers.PostgreSqlInitializer
 import org.bronco.payments.repositories.progress.ProgressKey
 import org.bronco.payments.repositories.progress.ProgressRepository
 import org.bronco.payments.schema.jooq.model.tables.references.PROCESS_PROGRESS
@@ -17,7 +16,6 @@ import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
 import org.springframework.boot.test.autoconfigure.jooq.JooqTest
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Import
-import org.springframework.test.context.ContextConfiguration
 import java.util.*
 
 @JooqTest(properties = ["payments.kafka.consumers.create-topics=false"])
@@ -26,7 +24,6 @@ import java.util.*
     exclude = [KafkaAutoConfiguration::class]
 )
 @Import(ProcessProgressRepository::class)
-@ContextConfiguration(initializers = [PostgreSqlInitializer::class])
 open class ProcessProgressRepositoryDataTest {
     @Autowired
     private lateinit var repository: ProgressRepository

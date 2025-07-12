@@ -6,7 +6,6 @@ import kotlinx.coroutines.test.runTest
 import org.apache.commons.lang3.RandomStringUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
-import org.bronco.payments.initializers.PostgreSqlInitializer
 import org.bronco.payments.repositories.customer.CustomerData
 import org.bronco.payments.schema.jooq.model.tables.records.CustomerRecord
 import org.bronco.payments.schema.jooq.model.tables.references.CUSTOMER
@@ -21,7 +20,6 @@ import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
 import org.springframework.boot.test.autoconfigure.jooq.JooqTest
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Import
-import org.springframework.test.context.ContextConfiguration
 import java.time.LocalDate
 import java.util.*
 
@@ -31,7 +29,6 @@ import java.util.*
     exclude = [KafkaAutoConfiguration::class]
 )
 @Import(PaymentsCustomerRepository::class)
-@ContextConfiguration(initializers = [PostgreSqlInitializer::class])
 open class PaymentsCustomerRepositoryTest {
     @Autowired
     private lateinit var dslContext: DSLContext

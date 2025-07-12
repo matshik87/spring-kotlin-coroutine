@@ -4,7 +4,6 @@ import org.bronco.payments.initializers.base.BaseContainerInitializer
 import org.bronco.payments.initializers.base.ContainerProperties
 import org.springframework.context.ConfigurableApplicationContext
 import org.testcontainers.kafka.KafkaContainer
-import java.util.concurrent.atomic.AtomicBoolean
 
 open class KafkaInitializer : BaseContainerInitializer<KafkaContainer>("kafkaPropertySource") {
     companion object {
@@ -15,8 +14,6 @@ open class KafkaInitializer : BaseContainerInitializer<KafkaContainer>("kafkaPro
         private val dockerImage = "containers.kafka.image"
         private val destroyOnExit = "containers.kafka.destroy-on-exit"
         private val bootstrapServersNameProperty = "containers.kafka.properties.bootstrap-servers"
-        private val kafkaContainer: ScopedValue<KafkaContainer> = ScopedValue.newInstance()
-        private val containerCreated = AtomicBoolean(false)
     }
 
     override fun createContainer(): (ContainerProperties) -> KafkaContainer = { properties ->
@@ -31,17 +28,14 @@ open class KafkaInitializer : BaseContainerInitializer<KafkaContainer>("kafkaPro
         val environment = applicationContext.environment
         val propertySources = environment.propertySources
         val runContainer = environment.getProperty(isEnabled, defaultBooleanValue).toBooleanStrict()
-        if (runContainer && !containerCreated.get()) {
-            val container = createContainer()(
+        if (runContainer) {
+            val container = getContainer {
                 ContainerProperties(environment.getProperty(dockerImage, defaultKafkaImage), jdbcProperties = null)
-            )
-            containerCreated.set(true)
+            }
             if (environment.getProperty(destroyOnExit, defaultBooleanValue).toBooleanStrict()) {
                 Runtime.getRuntime().addShutdownHook(Thread(container::stop))
             }
-            val scopedValue = ScopedValue.where(kafkaContainer, container)
-
-            val bootstrapServers = { scopedValue.get(kafkaContainer).bootstrapServers }
+            val bootstrapServers = { container.bootstrapServers }
             bindPropertySource(propertySources) {
                 buildMap {
                     environment.getProperty(bootstrapServersNameProperty, defaultValue)
