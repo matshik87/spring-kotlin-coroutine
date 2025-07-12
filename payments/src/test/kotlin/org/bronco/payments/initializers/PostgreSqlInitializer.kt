@@ -1,15 +1,16 @@
 package org.bronco.payments.initializers
 
-import org.springframework.context.ApplicationContextInitializer
+import org.bronco.payments.initializers.base.BaseContainerInitializer
+import org.bronco.payments.initializers.base.ContainerProperties
+import org.bronco.payments.initializers.base.JdbcProperties
 import org.springframework.context.ConfigurableApplicationContext
-import org.springframework.core.env.EnumerablePropertySource
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.MountableFile
 import java.util.concurrent.atomic.AtomicBoolean
 
 private const val defaultPostgresImage = "postgres:13-alpine"
 
-open class PostgreSqlInitializer : ApplicationContextInitializer<ConfigurableApplicationContext> {
+open class PostgreSqlInitializer : BaseContainerInitializer<PostgreSQLContainer<*>>("postgresPropertySource") {
     companion object {
         private val defaultExposedPort = 5432
         private val defaultBooleanValue = "false"
@@ -29,28 +30,25 @@ open class PostgreSqlInitializer : ApplicationContextInitializer<ConfigurableApp
         private val containerCreated = AtomicBoolean(false)
     }
 
-
-    private fun createContainer(
-        dockerImage: String,
-        user: String,
-        password: String,
-        databaseName: String,
-        initScript: String? = null
-    ): PostgreSQLContainer<*> = PostgreSQLContainer(dockerImage)
-        .apply {
-            withExposedPorts(defaultExposedPort)
-                .withUsername(user)
-                .withPassword(password)
-                .withDatabaseName(databaseName)
-                .withCommand()
-                .withReuse(true)
-            if (initScript != null) {
-                withCopyFileToContainer(
-                    MountableFile.forHostPath(initScript),
-                    "/docker-entrypoint-initdb.d/init.sql"
-                )
-            }
-            start()
+    override fun createContainer(): (ContainerProperties) -> PostgreSQLContainer<*> =
+        { properties ->
+            PostgreSQLContainer(properties.dockerImage)
+                .apply {
+                    withExposedPorts(properties.jdbcProperties!!.defaultExposedPort)
+                        .withUsername(properties.jdbcProperties!!.user)
+                        .withPassword(properties.jdbcProperties!!.password)
+                        .withDatabaseName(properties.jdbcProperties!!.databaseName)
+                        .withCommand()
+                        .withReuse(true)
+                    val initScript = properties.jdbcProperties.initScript
+                    if (initScript != null) {
+                        withCopyFileToContainer(
+                            MountableFile.forHostPath(initScript),
+                            "/docker-entrypoint-initdb.d/init.sql"
+                        )
+                    }
+                    start()
+                }
         }
 
     override fun initialize(applicationContext: ConfigurableApplicationContext) {
@@ -58,13 +56,18 @@ open class PostgreSqlInitializer : ApplicationContextInitializer<ConfigurableApp
         val propertySources = environment.propertySources
         val runContainer = environment.getProperty(isEnabled, defaultBooleanValue).toBooleanStrict()
         if (runContainer && !containerCreated.get()) {
-            val container = createContainer(
-                dockerImage = environment.getProperty(dockerImage, defaultPostgresImage),
-                user = environment.getProperty(username, defaultValue),
-                password = environment.getProperty(password, defaultValue),
-                databaseName = environment.getProperty(databaseName, defaultValue),
-                initScript = environment.getProperty(initScriptProperty)
-                    ?.let { resourceName -> applicationContext.getResource(resourceName).file.path }
+            val container = createContainer()(
+                ContainerProperties(
+                    dockerImage = environment.getProperty(dockerImage, defaultPostgresImage),
+                    jdbcProperties = JdbcProperties(
+                        user = environment.getProperty(username, defaultValue),
+                        password = environment.getProperty(password, defaultValue),
+                        databaseName = environment.getProperty(databaseName, defaultValue),
+                        defaultExposedPort = defaultExposedPort,
+                        initScript = environment.getProperty(initScriptProperty)
+                            ?.let { resourceName -> applicationContext.getResource(resourceName).file.path }
+                    )
+                )
             )
             containerCreated.set(true)
             if (environment.getProperty(destroyOnExit, defaultBooleanValue).toBooleanStrict()) {
@@ -72,31 +75,22 @@ open class PostgreSqlInitializer : ApplicationContextInitializer<ConfigurableApp
             }
             val scopedValue = ScopedValue.where(postgresContainer, container)
 
-            val databaseName = { scopedValue.get(postgresContainer).databaseName }
-            val properties = buildMap {
-                environment.getProperty(databaseNameProperty, defaultValue).split(',').map { it.trim() }
-                    .map { key -> key to databaseName }.forEach { entry -> put(entry.first, entry.second) }
-                put(
-                    environment.getProperty(databaseUrlProperty, defaultValue),
-                    { scopedValue.get(postgresContainer).getJdbcUrl() })
-                put(
-                    environment.getProperty(usernameProperty, defaultValue),
-                    { scopedValue.get(postgresContainer).username })
-                put(
-                    environment.getProperty(passwordProperty, defaultValue),
-                    { scopedValue.get(postgresContainer).password })
+            bindPropertySource(propertySources) {
+                val databaseName = { scopedValue.get(postgresContainer).databaseName }
+                buildMap {
+                    environment.getProperty(databaseNameProperty, defaultValue).split(',').map { it.trim() }
+                        .map { key -> key to databaseName }.forEach { entry -> put(entry.first, entry.second) }
+                    put(
+                        environment.getProperty(databaseUrlProperty, defaultValue),
+                        { scopedValue.get(postgresContainer).getJdbcUrl() })
+                    put(
+                        environment.getProperty(usernameProperty, defaultValue),
+                        { scopedValue.get(postgresContainer).username })
+                    put(
+                        environment.getProperty(passwordProperty, defaultValue),
+                        { scopedValue.get(postgresContainer).password })
+                }
             }
-            propertySources.addLast(PostgresContainerPropertySource(properties))
         }
-    }
-
-    private class PostgresContainerPropertySource(source: Map<String, () -> String>) :
-        EnumerablePropertySource<Map<String, () -> String>>("postgresPropertySource", source) {
-        override fun getProperty(name: String): Any? = if (source.containsKey(name)) {
-            source[name]!!()
-        } else null
-
-        override fun getPropertyNames(): Array<String> = source.keys.toTypedArray()
-        override fun containsProperty(name: String): Boolean = source.containsKey(name)
     }
 }
