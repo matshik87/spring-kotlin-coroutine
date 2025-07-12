@@ -12,16 +12,30 @@ payments:
     default: test-passwd-1234
     algorithm: SHA-512
     charset: UTF-8
-# commenting out kafka config till testcontainer is introduced
-#  kafka:
-#    bootstrap-servers: localhost:2345
-#    consumers:
-#      create-topics: false
-#      containers:
-#        default-container:
-#          concurrency: 1
+  kafka:
+    consumers:
+      create-topics: false
+      containers:
+        default-container:
+          concurrency: 1
+      topics:
+        create-customer:
+          topic-name: payments.customer.create
+          concurrency: ${payments.kafka.consumers.containers.default-container.concurrency}
+          group-id: payments.customer-management
+          auto-offset-reset: latest
+          auto-commit: false
+          bootstrap-servers: ${payments.kafka.bootstrap-servers}
+          key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
 containers:
+  kafka:
+    enabled: true
+    image: apache/kafka:3.9.1
+    destroy-on-exit: true
+    properties:
+      bootstrap-servers: payments.kafka.bootstrap-servers
   db:
     enabled: true
     image: postgres:16.8-alpine3.20
