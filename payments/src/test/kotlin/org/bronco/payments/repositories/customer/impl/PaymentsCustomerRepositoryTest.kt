@@ -9,6 +9,7 @@ import org.assertj.core.api.Assertions.fail
 import org.bronco.payments.repositories.customer.CustomerData
 import org.bronco.payments.schema.jooq.model.tables.records.CustomerRecord
 import org.bronco.payments.schema.jooq.model.tables.references.CUSTOMER
+import org.bronco.payments.utils.CustomerDataGenerators.generateCustomerData
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
 import org.jooq.kotlin.coroutines.transactionCoroutine
@@ -20,7 +21,6 @@ import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
 import org.springframework.boot.test.autoconfigure.jooq.JooqTest
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Import
-import java.time.LocalDate
 import java.util.*
 
 @JooqTest(properties = ["payments.kafka.consumers.create-topics=false"])
@@ -145,27 +145,5 @@ open class PaymentsCustomerRepositoryTest {
                 .await()
             record.into(CustomerData::class.java)
         }
-    }
-
-    private suspend fun generateCustomerData(customerId: UUID? = null): CustomerData = coroutineScope {
-        val randomStringUtils = RandomStringUtils.secure()
-        val nationality = "UK"
-        CustomerData(
-            customerId = customerId,
-            firstName = randomStringUtils.nextAscii(10)
-                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-            middleName = null,
-            lastName = randomStringUtils.nextAscii(10)
-                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-            dateOfBirth = LocalDate.now().minusYears(18).minusDays(1),
-            nationality = nationality,
-            countryOfResidence = nationality,
-            login = randomStringUtils.nextAscii(10),
-            password = randomStringUtils.nextAlphabetic(15),
-            email = "${randomStringUtils.nextAscii(5, 10)}@test.com",
-            phoneNumber = "+${randomStringUtils.nextNumeric(8)}",
-            secondaryPhoneNumber = "+${randomStringUtils.nextNumeric(8)}"
-        )
-
     }
 }
