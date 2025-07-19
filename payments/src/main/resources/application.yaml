@@ -48,8 +48,7 @@ payments:
     dialect: POSTGRES
   password:
     default: passwd-1234
-    algorithm: SHA-512
-    charset: UTF-8
+    cost: 12
   kafka:
     bootstrap-servers: ${BOOTSTRAP_SERVERS}
     producers:
