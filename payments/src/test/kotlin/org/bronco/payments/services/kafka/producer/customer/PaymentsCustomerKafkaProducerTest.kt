@@ -3,6 +3,7 @@ package org.bronco.payments.services.kafka.producer.customer
 import com.fasterxml.jackson.databind.ObjectWriter
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import org.apache.commons.lang3.RandomStringUtils
 import org.apache.kafka.clients.admin.AdminClient
 import org.apache.kafka.clients.admin.NewTopic
 import org.assertj.core.api.Assertions.assertThat
@@ -20,6 +21,7 @@ import org.bronco.payments.utils.CustomerDataGenerators.generateCreateCustomerRe
 import org.bronco.payments.utils.TemporalUtils.LOCAL_DATE_FORMATTER
 import org.jooq.DSLContext
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -59,7 +61,7 @@ class PaymentsCustomerKafkaProducerTest {
     @Autowired
     private lateinit var dslContext: DSLContext
 
-    @AfterEach
+    @BeforeEach
     fun setUp() {
         val createCustomer = kafkaProperties.consumers.topics.createCustomer
         adminClient.deleteTopics(listOf(createCustomer.topicName))
@@ -68,20 +70,26 @@ class PaymentsCustomerKafkaProducerTest {
         dslContext.deleteFrom(CUSTOMER)
     }
 
+    @AfterEach
+    fun tearDown() {
+        dslContext.deleteFrom(PROCESS_PROGRESS)
+        dslContext.deleteFrom(CUSTOMER)
+    }
+
     @Test
-    fun dispatchCreateCustomer() = runTest {
+    fun dispatchCreateCustomer_withValidRequest_customerIsCreated() = runTest {
         val payload = generateCreateCustomerRequest(email)
 
         kafkaProducer.dispatchCreateCustomer(payload)
         customerRepository.findByLoginAndEmail(null, payload.email)
         await().atMost(1, TimeUnit.SECONDS).until {
-            // Custom await using runBlocking
             runBlocking {
-                val result = customerRepository.findByLoginAndEmail(null, payload.email)
-                result != null
+                customerRepository.findByLoginAndEmail(null, payload.email) != null
             }
         }
+
         val result = customerRepository.findByLoginAndEmail(null, payload.email)
+
         assertThat(result).isNotNull
             .returns(payload.firstName) { it!!.firstName }
             .returns(payload.middleName) { it!!.middleName }
@@ -99,5 +107,40 @@ class PaymentsCustomerKafkaProducerTest {
                 .and(PROCESS_PROGRESS.PROGRESS.eq(ProgressType.FINISHED.name))
         ).fetchInto(ProcessProgressDetails::class.java)
         assertThat(progress).singleElement()
+    }
+
+    @Test
+    fun dispatchCreateCustomer_withInvalidRequest_customerIsNotCreatedButProgressHasMoreDetails() = runTest {
+        val email = RandomStringUtils.secure().nextAlphanumeric(101)
+        val payload = generateCreateCustomerRequest(email)
+
+        kafkaProducer.dispatchCreateCustomer(payload)
+
+        await().atMost(1, TimeUnit.SECONDS).until {
+            runBlocking {
+                customerRepository.findByLoginAndEmail(null, payload.email) == null
+                        && dslContext.fetchExists(
+                    dslContext.selectFrom(PROCESS_PROGRESS)
+                        .where(
+                            PROCESS_PROGRESS.PROGRESS.eq(ProgressType.FINISHED_WITH_ERROR.name).and(
+                                PROCESS_PROGRESS.PROCESS_NAME.eq(ProcessName.CREATE_CUSTOMER.name)
+                            ).and(
+                                PROCESS_PROGRESS.ENTITY_ID.isNotNull
+                            ).and(PROCESS_PROGRESS.ENTITY_ID.isNotNull)
+                        )
+                )
+            }
+        }
+
+        val processProgress = dslContext.selectFrom(PROCESS_PROGRESS)
+            .where(
+                PROCESS_PROGRESS.PROGRESS.eq(ProgressType.FINISHED_WITH_ERROR.name).and(
+                    PROCESS_PROGRESS.PROCESS_NAME.eq(ProcessName.CREATE_CUSTOMER.name)
+                ).and(
+                    PROCESS_PROGRESS.ENTITY_ID.isNotNull
+                ).and(PROCESS_PROGRESS.ENTITY_ID.isNotNull)
+            ).fetchInto(ProcessProgressDetails::class.java)
+
+        assertThat(processProgress).singleElement()
     }
 }
