@@ -54,7 +54,7 @@ class BroncoControllerAdvice {
                     error.defaultMessage
                 )
 
-                is ObjectError -> ErrorDetail(error.objectName, null, error.defaultMessage)
+                is ObjectError -> ErrorDetail(null, null, error.defaultMessage)
                 else -> ErrorDetail(null, null, error.defaultMessage)
             }
         }
