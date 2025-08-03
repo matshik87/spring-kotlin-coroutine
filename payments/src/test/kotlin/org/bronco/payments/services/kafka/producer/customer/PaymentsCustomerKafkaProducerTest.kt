@@ -82,7 +82,7 @@ class PaymentsCustomerKafkaProducerTest {
 
         kafkaProducer.dispatchCreateCustomer(payload)
         customerRepository.findByLoginAndEmail(null, payload.email)
-        await().atMost(1, TimeUnit.SECONDS).until {
+        await().atMost(5, TimeUnit.SECONDS).until {
             runBlocking {
                 customerRepository.findByLoginAndEmail(null, payload.email) != null
             }

@@ -15,7 +15,7 @@ kotlin {
 
 dependencies {
 
-    implementation("org.springframework.boot:spring-boot-starter-web") {
+    implementation("org.springframework.boot:spring-boot-starter-webflux") {
         exclude group: "org.springframework.boot", module: "spring-boot-starter-tomcat"
     }
     implementation("org.springframework.boot:spring-boot-starter-undertow")
@@ -29,7 +29,7 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$openApiVersion")
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.9")
     runtimeOnly("org.postgresql:postgresql")
     jooqCodegen("org.postgresql:postgresql")
     implementation("org.liquibase:liquibase-core")
@@ -38,10 +38,16 @@ dependencies {
     implementation("at.favre.lib:bcrypt:0.10.2")
 
     //test resources
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-test") {
+        exclude group: "junit", module: "junit"
+        exclude group: "org.mockito", module: "mockito-core"
+        exclude group: "org.mockito", module: "mockito-junit-jupiter"
+    }
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testImplementation("org.springframework.kafka:spring-kafka-test")
     testImplementation("org.awaitility:awaitility:4.2.2")
+    testImplementation("io.mockk:mockk:1.14.5")
+    testImplementation("com.ninja-squad:springmockk:4.0.2")
 
 //    test containers dependencies
     testImplementation("org.testcontainers:postgresql:${testContainersVersion}")
@@ -57,7 +63,7 @@ jooq {
         logging = "INFO"
         jdbc {
             driver = "org.postgresql.Driver"
-            url="jdbc-url"
+            url = "jdbc-url"
             user = "user"
             password = "password"
         }

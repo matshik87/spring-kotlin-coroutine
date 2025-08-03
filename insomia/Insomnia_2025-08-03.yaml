@@ -1,0 +1,228 @@
+type: collection.insomnia.rest/5.0
+name: payment service
+meta:
+  id: wrk_b321d7fa8c2a4fe2ac72153349c48fcc
+  created: 1746381510957
+  modified: 1746381510957
+  description: ""
+collection:
+  - name: Manag
+    meta:
+      id: fld_0cefda62e8ca49e8906fa4dbb9e26c3b
+      created: 1746381510959
+      modified: 1746381510959
+      sortKey: -1746371745116
+      description: ""
+    children:
+      - url: "{{ _['payment-manag-url'] }}/app"
+        name: actuator
+        meta:
+          id: req_9922112981814a27bcaa32b8947d2efb
+          created: 1746381510959
+          modified: 1746972824001
+          isPrivate: false
+          description: ""
+          sortKey: -1746371748702
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/10.3.1
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _['payment-manag-url'] }}/app/health"
+        name: health
+        meta:
+          id: req_00d9f1911d9142eba66c7f6f925a8feb
+          created: 1746381510960
+          modified: 1746381510960
+          isPrivate: false
+          description: ""
+          sortKey: -1738167572538
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/10.3.1
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _['payment-manag-url'] }}/app/metrics/jvm.info"
+        name: jvm info metric
+        meta:
+          id: req_94a7fc70cda0472ca104e2381cae3310
+          created: 1746381510960
+          modified: 1746381510960
+          isPrivate: false
+          description: ""
+          sortKey: -1732014440415
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/10.3.1
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _['payment-manag-url'] }}/app/metrics"
+        name: metrics
+        meta:
+          id: req_eb7e6c4429a944a58d2c607e2d25c2b1
+          created: 1746381510960
+          modified: 1746381510960
+          isPrivate: false
+          description: ""
+          sortKey: -1734065484456
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/10.3.1
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Customers
+    meta:
+      id: fld_c03a657d1dd74e4483ff58cb032100d1
+      created: 1746972700450
+      modified: 1746972700450
+      sortKey: -1746972700450
+      description: ""
+    children:
+      - url: "{{ _['payment-url'] }}/api/customers/:customerId"
+        name: retrieve customer by id
+        meta:
+          id: req_b96bb4eec316490ba64cf37ddde160e0
+          created: 1746972713045
+          modified: 1754207545473
+          isPrivate: false
+          description: ""
+          sortKey: -1746972830072
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/10.3.1
+            id: pair_b2dc422341764c31b73abbd84e0bc412
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+        pathParameters:
+          - name: customerId
+            value: b8921dab-4de3-4121-bfbd-8e27c37119c2
+      - url: "{{ _['payment-url'] }}/api/customers"
+        name: create customer
+        meta:
+          id: req_7d9e318152634b6ba2822ca129f8ccf5
+          created: 1749920637638
+          modified: 1754207034526
+          isPrivate: false
+          description: ""
+          sortKey: -1746672289387
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"firstName": "Marko",
+            	"middleName": "Constantine",
+            	"lastName": "Polo",
+            	"dateOfBirth": "12-05-2007",
+            	"nationality": "PT",
+            	"countryOfResidence": "ES",
+            	"email": "marko.polo@sth.pt",
+            	"phoneNumber": "+351211231234",
+            	"secondaryPhoneNumber": "+34646123123"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/10.3.1
+            id: pair_b2dc422341764c31b73abbd84e0bc412
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Swagger Api
+    meta:
+      id: fld_b3e516f55cd543f6a382cb8a7ad0bc36
+      created: 1754208903607
+      modified: 1754208903607
+      sortKey: -1746672222783
+      description: ""
+    children:
+      - url: "{{ _['payment-url'] }}/swagger"
+        name: swagger definition
+        meta:
+          id: req_a628043ba52a4ad1858abddef1e0c3e5
+          created: 1754208903608
+          modified: 1754209802493
+          isPrivate: false
+          description: ""
+          sortKey: -1746972830072
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/10.3.1
+            id: pair_b2dc422341764c31b73abbd84e0bc412
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_3bc57a9c0cb94d97b03f2a902e1a17b9
+    created: 1746381510959
+    modified: 1746381510959
+environments:
+  name: Base Environment
+  meta:
+    id: env_dc514590771c4579b0b8f2e78a272272
+    created: 1746381510958
+    modified: 1746381510958
+    isPrivate: false
+  data:
+    "": ""
+  subEnvironments:
+    - name: local
+      meta:
+        id: env_20b5713dd37b4f8f8f69e30f7eab0e98
+        created: 1746381510958
+        modified: 1746972808242
+        isPrivate: false
+        sortKey: 1746371668680
+      data:
+        payment-url: http://127.0.0.1:8080
+        payment-manag-url: http://127.0.0.1:9000
+        "": ""

@@ -32,6 +32,6 @@ for sure:
 Maybe some day a helm template
 
 #Swagger
-Swagger doc can be found under /api/swagger-ui/index.html.
+Swagger doc UI can be found under /api/swagger/ui.
 Swagger definition can be found under /api/swagger
 

@@ -34,20 +34,20 @@ object CustomerDataGenerators {
         email: String
     ): CreateCustomerRequest = coroutineScope {
         val randomStringUtils = RandomStringUtils.secure()
-        val nationality = "UK"
+        val nationality = "GB"
         CreateCustomerRequest(
-            firstName = randomStringUtils.nextAscii(10)
+            firstName = randomStringUtils.nextAlphabetic(10).lowercase()
                 .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
             middleName = null,
-            lastName = randomStringUtils.nextAscii(10)
+            lastName = randomStringUtils.nextAlphabetic(10).lowercase()
                 .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
             dateOfBirth = LOCAL_DATE_FORMATTER.format(LocalDate.now().minusYears(18).minusDays(1)),
             nationality = nationality,
             countryOfResidence = nationality,
             password = randomStringUtils.nextAlphabetic(15),
             email = email,
-            phoneNumber = "+${randomStringUtils.nextNumeric(8)}",
-            secondaryPhoneNumber = "+${randomStringUtils.nextNumeric(8)}"
+            phoneNumber = "+44207123${randomStringUtils.nextNumeric(4)}",
+            secondaryPhoneNumber = "+44207123${randomStringUtils.nextNumeric(4)}"
         )
     }
 }

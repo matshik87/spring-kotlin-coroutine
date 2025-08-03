@@ -10,13 +10,15 @@ import org.springframework.http.ResponseEntity
 import org.springframework.validation.FieldError
 import org.springframework.validation.ObjectError
 import org.springframework.web.bind.MethodArgumentNotValidException
-import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.bind.support.WebExchangeBindException
 import org.springframework.web.method.annotation.HandlerMethodValidationException
-import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver
 
-@ControllerAdvice
-class BroncoControllerAdvice : DefaultHandlerExceptionResolver() {
+
+@RestControllerAdvice
+class BroncoControllerAdvice {
+    //TODO: most probably it's useless now, to be checked
     @ExceptionHandler(HandlerMethodValidationException::class)
     fun handleMethodValidationException(exception: HandlerMethodValidationException): ResponseEntity<PaymentsErrorResponse> {
         val results = exception.allErrors.map { error: MessageSourceResolvable ->
@@ -42,6 +44,32 @@ class BroncoControllerAdvice : DefaultHandlerExceptionResolver() {
         )
     }
 
+    @ExceptionHandler(WebExchangeBindException::class)
+    fun handleWebExchangeBindException(exception: WebExchangeBindException): ResponseEntity<PaymentsErrorResponse> {
+        val results = exception.allErrors.map { error: MessageSourceResolvable ->
+            when (error) {
+                is FieldError -> ErrorDetail(
+                    error.rejectedValue?.toString(),
+                    error.field,
+                    error.defaultMessage
+                )
+
+                is ObjectError -> ErrorDetail(error.objectName, null, error.defaultMessage)
+                else -> ErrorDetail(null, null, error.defaultMessage)
+            }
+        }
+        val badRequest = HttpStatus.BAD_REQUEST
+        return ResponseEntity.status(badRequest).body(
+            PaymentsErrorResponse(
+                code = badRequest.value(),
+                status = badRequest.name,
+                type = ErrorTypes.VALIDATION,
+                details = results
+            )
+        )
+    }
+
+    //TODO: most probably it's useless now, to be checked
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleMethodValidationException(exception: MethodArgumentNotValidException): ResponseEntity<PaymentsErrorResponse> {
         val violationDetails = exception.allErrors.map { error: ObjectError ->

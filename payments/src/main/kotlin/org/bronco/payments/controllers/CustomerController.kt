@@ -15,7 +15,6 @@ import org.bronco.payments.services.kafka.producer.customer.CustomerKafkaProduce
 import org.bronco.payments.services.processes.model.ProcessProgressDetails
 import org.bronco.payments.utils.toUuid
 import org.bronco.payments.validation.customer.ValidUuid
-import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -29,7 +28,8 @@ open class CustomerController(
     private val customerService: CustomerService
 ) {
     @Operation(
-        method = "createCustomer",
+        method = "POST",
+        tags = ["customer"],
         summary = """
             Creates a new customer. In case of an existing customer, no new user is to be created.
              The result of the operation can be verified at TODO: add specific endpoint to check the status.
@@ -59,13 +59,11 @@ open class CustomerController(
         ]
     )
     @PostMapping(consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
-    suspend fun createCustomer(@Valid @RequestBody payload: CreateCustomerRequest): ResponseEntity<ProcessProgressDetails> {
-        val result = customerKafkaProducer.dispatchCreateCustomer(payload)
-        return ResponseEntity(result, HttpStatus.ACCEPTED)
-    }
+    suspend fun createCustomer(@Valid @RequestBody payload: CreateCustomerRequest): ResponseEntity<ProcessProgressDetails> =
+        ResponseEntity.accepted().body(customerKafkaProducer.dispatchCreateCustomer(payload))
 
     @Operation(
-        method = "retrieveCustomer",
+        method = "GET",
         summary = "Retrieves a customer identified by id",
         parameters = [
             Parameter(

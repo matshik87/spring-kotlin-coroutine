@@ -2,11 +2,12 @@ server:
   port: 8080
   http2:
     enabled: true
-  servlet:
-    context-path: /api
-spring:
+  compression:
+    enabled: true
   application:
     name: payment-service
+  webflux:
+    base-path: /api
   liquibase:
     change-log: classpath:/db/changelogs/changelog-master.xml
     liquibase-schema: ${DB_SCHEMA}
@@ -35,7 +36,9 @@ management:
 springdoc:
   api-docs:
     enabled: true
-    path: /swagger
+    path: ${server.webflux.base-path}/swagger
+  swagger-ui:
+    path: ${springdoc.api-docs.path}/ui
 
 payments:
   data-source:
