@@ -7,6 +7,9 @@ import io.mockk.coVerify
 import kotlinx.coroutines.test.runTest
 import org.bronco.payments.config.ObjectMapperConfig
 import org.bronco.payments.controllers.api.CreateCustomerRequest
+import org.bronco.payments.controllers.api.ErrorDetail
+import org.bronco.payments.controllers.api.ErrorTypes
+import org.bronco.payments.controllers.api.PaymentsErrorResponse
 import org.bronco.payments.services.customer.CustomerService
 import org.bronco.payments.services.kafka.producer.customer.CustomerKafkaProducer
 import org.bronco.payments.services.processes.model.ProcessName
@@ -20,6 +23,7 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.context.annotation.Import
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -38,10 +42,13 @@ import java.util.*
 class CustomerControllerTest {
     @MockkBean
     private lateinit var customerKafkaProducer: CustomerKafkaProducer
+
     @MockkBean
     private lateinit var customerService: CustomerService
+
     @Autowired
     private lateinit var webTestClient: WebTestClient
+
     @Autowired
     private lateinit var objectWriter: ObjectWriter
 
@@ -63,5 +70,75 @@ class CustomerControllerTest {
             .expectBody().json(objectWriter.writeValueAsString(processProgressDetails))
 
         coVerify(exactly = 1) { customerKafkaProducer.dispatchCreateCustomer(any(CreateCustomerRequest::class)) }
+    }
+
+    @Test
+    fun createCustomer_whenInvalidRequest_then400WithErrorDetailsIsReturned() = runTest {
+        val value = "not-an-email"
+        val requestPayload = generateCreateCustomerRequest(value)
+        val badRequest = HttpStatus.BAD_REQUEST
+        val response = PaymentsErrorResponse(
+            code = badRequest.value(), status = badRequest.name, type = ErrorTypes.VALIDATION,
+            details = listOf(ErrorDetail(value = value, field = "email", message = "Valid email is required"))
+        )
+
+        webTestClient.post().uri("/customers")
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(requestPayload))
+            .exchange()
+            .expectStatus().isBadRequest
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody().json(objectWriter.writeValueAsString(response))
+
+        coVerify(exactly = 0) { customerKafkaProducer.dispatchCreateCustomer(any(CreateCustomerRequest::class)) }
+    }
+
+    @Test
+    fun createCustomer_whenRequestFailedDueToFewFields_then400WithErrorDetailsIsReturned() = runTest {
+        val email = "not-an-email"
+        val nationality = "ZD"
+        val firstName = "nam3n"
+        val middleName = "middleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        val birthDate = "unknown"
+        val phoneNumber = "0-700-CALL-ME"
+        val requestPayload = generateCreateCustomerRequest(
+            email = email,
+            nationality = nationality,
+            firstName = firstName,
+            middleName = middleName,
+            birthDay = birthDate,
+            phoneNumber = phoneNumber,
+            countryOfResidence = "GB"
+        )
+        val badRequest = HttpStatus.BAD_REQUEST
+        val response = PaymentsErrorResponse(
+            code = badRequest.value(), status = badRequest.name, type = ErrorTypes.VALIDATION,
+            details = listOf(
+                ErrorDetail(value = email, field = "email", message = "Valid email is required"),
+                ErrorDetail(value = nationality, field = "nationality", message = "Nationality ISO code is expected"),
+                ErrorDetail(value = firstName, field = "firstName", message = "First name is invalid"),
+                ErrorDetail(
+                    value = middleName,
+                    field = "middleName",
+                    message = "Middle name must consist of 2-40 characters"
+                ),
+                ErrorDetail(value = "unknown", field = "dateOfBirth", message = "Proper Date of birth is required"),
+                ErrorDetail(
+                    value = null,
+                    field = null,
+                    message = "Provided phone number is invalid"
+                ),
+            )
+        )
+
+        webTestClient.post().uri("/customers")
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(requestPayload))
+            .exchange()
+            .expectStatus().isBadRequest
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody().json(objectWriter.writeValueAsString(response))
+
+        coVerify(exactly = 0) { customerKafkaProducer.dispatchCreateCustomer(any(CreateCustomerRequest::class)) }
     }
 }

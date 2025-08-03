@@ -31,22 +31,27 @@ object CustomerDataGenerators {
     }
 
     suspend fun generateCreateCustomerRequest(
-        email: String
+        email: String = "test@test.com",
+        nationality: String = "GB",
+        firstName: String? = null,
+        middleName: String? = null,
+        birthDay: String? = null,
+        countryOfResidence: String? = nationality,
+        phoneNumber: String? = null
     ): CreateCustomerRequest = coroutineScope {
         val randomStringUtils = RandomStringUtils.secure()
-        val nationality = "GB"
         CreateCustomerRequest(
-            firstName = randomStringUtils.nextAlphabetic(10).lowercase()
+            firstName = firstName ?: randomStringUtils.nextAlphabetic(10).lowercase()
                 .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-            middleName = null,
+            middleName = middleName,
             lastName = randomStringUtils.nextAlphabetic(10).lowercase()
                 .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-            dateOfBirth = LOCAL_DATE_FORMATTER.format(LocalDate.now().minusYears(18).minusDays(1)),
+            dateOfBirth = birthDay ?: LOCAL_DATE_FORMATTER.format(LocalDate.now().minusYears(18).minusDays(1)),
             nationality = nationality,
-            countryOfResidence = nationality,
+            countryOfResidence = countryOfResidence,
             password = randomStringUtils.nextAlphabetic(15),
             email = email,
-            phoneNumber = "+44207123${randomStringUtils.nextNumeric(4)}",
+            phoneNumber = phoneNumber ?: "+44207123${randomStringUtils.nextNumeric(4)}",
             secondaryPhoneNumber = "+44207123${randomStringUtils.nextNumeric(4)}"
         )
     }
