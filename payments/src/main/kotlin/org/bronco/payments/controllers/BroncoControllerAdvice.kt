@@ -18,7 +18,6 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 
 @RestControllerAdvice
 class BroncoControllerAdvice {
-    //TODO: most probably it's useless now, to be checked
     @ExceptionHandler(HandlerMethodValidationException::class)
     fun handleMethodValidationException(exception: HandlerMethodValidationException): ResponseEntity<PaymentsErrorResponse> {
         val results = exception.allErrors.map { error: MessageSourceResolvable ->
@@ -28,7 +27,6 @@ class BroncoControllerAdvice {
                     error.field,
                     error.defaultMessage
                 )
-
                 is ObjectError -> ErrorDetail(error.objectName, null, error.defaultMessage)
                 else -> ErrorDetail(null, null, error.defaultMessage)
             }

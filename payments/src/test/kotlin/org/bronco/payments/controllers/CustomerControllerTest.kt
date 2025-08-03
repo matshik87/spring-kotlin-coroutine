@@ -10,6 +10,8 @@ import org.bronco.payments.controllers.api.CreateCustomerRequest
 import org.bronco.payments.controllers.api.ErrorDetail
 import org.bronco.payments.controllers.api.ErrorTypes
 import org.bronco.payments.controllers.api.PaymentsErrorResponse
+import org.bronco.payments.model.ResourceNotFoundException
+import org.bronco.payments.model.ResourceType
 import org.bronco.payments.services.customer.CustomerService
 import org.bronco.payments.services.kafka.producer.customer.CustomerKafkaProducer
 import org.bronco.payments.services.processes.model.ProcessName
@@ -140,5 +142,47 @@ class CustomerControllerTest {
             .expectBody().json(objectWriter.writeValueAsString(response))
 
         coVerify(exactly = 0) { customerKafkaProducer.dispatchCreateCustomer(any(CreateCustomerRequest::class)) }
+    }
+
+    @Test
+    fun createCustomerById_whenInvalidRequest_then400IsReturned() = runTest {
+        val requestId = "invalid-uuid"
+        val badRequest = HttpStatus.BAD_REQUEST
+        val response = PaymentsErrorResponse(
+            code = badRequest.value(), status = badRequest.name, type = ErrorTypes.VALIDATION,
+            details = listOf(
+                ErrorDetail(value = null, field = null, message = "Invalid UUID identifier was provided"),
+            )
+        )
+
+        webTestClient.get().uri("/customers/{id}", requestId)
+            .exchange()
+            .expectStatus().isBadRequest
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody().json(objectWriter.writeValueAsString(response))
+
+    }
+
+    @Test
+    fun createCustomerById_whenCustomerWasNotFound_then404IsReturned() = runTest {
+        val customerId = UUID.randomUUID()
+        val notFound = HttpStatus.NOT_FOUND
+        val response = PaymentsErrorResponse(
+            notFound.value(),
+            notFound.name,
+            ErrorTypes.RESOURCE_NOT_FOUND,
+            listOf(ErrorDetail(null, null, "Customer with id $customerId was not found"))
+        )
+        coEvery { customerService.retrieveCustomerById(customerId) } throws ResourceNotFoundException(
+            customerId,
+            ResourceType.CUSTOMER
+        )
+
+        webTestClient.get().uri("/customers/{id}", customerId)
+            .exchange()
+            .expectStatus().isNotFound
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody().json(objectWriter.writeValueAsString(response))
+        coVerify(exactly = 1) { customerService.retrieveCustomerById(customerId) }
     }
 }

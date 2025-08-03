@@ -6,8 +6,6 @@ server:
     enabled: true
   application:
     name: payment-service
-  webflux:
-    base-path: /api
   liquibase:
     change-log: classpath:/db/changelogs/changelog-master.xml
     liquibase-schema: ${DB_SCHEMA}
@@ -33,10 +31,13 @@ management:
       enabled: true
     build:
       enabled: true
+spring:
+  webflux:
+    base-path: /api
 springdoc:
   api-docs:
     enabled: true
-    path: ${server.webflux.base-path}/swagger
+    path: /swagger
   swagger-ui:
     path: ${springdoc.api-docs.path}/ui
 
