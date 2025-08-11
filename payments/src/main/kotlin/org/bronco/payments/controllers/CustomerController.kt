@@ -29,7 +29,7 @@ open class CustomerController(
 ) {
     @Operation(
         method = "POST",
-        tags = ["customer"],
+        tags = ["customers"],
         summary = """
             Creates a new customer. In case of an existing customer, no new user is to be created.
              The result of the operation can be verified at TODO: add specific endpoint to check the status.
