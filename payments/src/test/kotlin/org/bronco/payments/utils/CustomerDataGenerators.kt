@@ -3,16 +3,18 @@ package org.bronco.payments.utils
 import kotlinx.coroutines.coroutineScope
 import org.apache.commons.lang3.RandomStringUtils
 import org.bronco.payments.controllers.api.CreateCustomerRequest
+import org.bronco.payments.controllers.api.RetrieveCustomerResponse
 import org.bronco.payments.repositories.customer.CustomerData
 import org.bronco.payments.utils.TemporalUtils.LOCAL_DATE_FORMATTER
 import java.time.LocalDate
 import java.util.*
 
 object CustomerDataGenerators {
-    suspend fun generateCustomerData(customerId: UUID? = null): CustomerData = coroutineScope {
+    fun generateCustomerData(customerId: UUID? = null): CustomerData {
         val randomStringUtils = RandomStringUtils.secure()
         val nationality = "UK"
-        CustomerData(
+
+        return CustomerData(
             customerId = customerId,
             firstName = randomStringUtils.nextAscii(10)
                 .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
@@ -30,7 +32,7 @@ object CustomerDataGenerators {
         )
     }
 
-    suspend fun generateCreateCustomerRequest(
+    fun generateCreateCustomerRequest(
         email: String = "test@test.com",
         nationality: String = "GB",
         firstName: String? = null,
@@ -38,9 +40,9 @@ object CustomerDataGenerators {
         birthDay: String? = null,
         countryOfResidence: String? = nationality,
         phoneNumber: String? = null
-    ): CreateCustomerRequest = coroutineScope {
+    ): CreateCustomerRequest {
         val randomStringUtils = RandomStringUtils.secure()
-        CreateCustomerRequest(
+        return CreateCustomerRequest(
             firstName = firstName ?: randomStringUtils.nextAlphabetic(10).lowercase()
                 .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
             middleName = middleName,
@@ -53,6 +55,24 @@ object CustomerDataGenerators {
             email = email,
             phoneNumber = phoneNumber ?: "+44207123${randomStringUtils.nextNumeric(4)}",
             secondaryPhoneNumber = "+44207123${randomStringUtils.nextNumeric(4)}"
+        )
+    }
+
+    fun generateRetrieveCustomerResponse(customerId: UUID): RetrieveCustomerResponse {
+        val customerData = generateCustomerData(customerId)
+        return RetrieveCustomerResponse(
+            customerId = customerId,
+            firstName = customerData.firstName,
+            middleName = customerData.middleName,
+            lastName = customerData.lastName,
+            dateOfBirth = customerData.dateOfBirth,
+            nationality = customerData.nationality,
+            countryOfResidence = customerData.countryOfResidence,
+            email = customerData.email,
+            phoneNumber = customerData.phoneNumber,
+            secondaryPhoneNumber = customerData.secondaryPhoneNumber,
+            login = customerData.login,
+            passwordChangeRequired = customerData.passwordChangeRequired
         )
     }
 }

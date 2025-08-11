@@ -18,6 +18,7 @@ import org.bronco.payments.services.processes.model.ProcessName
 import org.bronco.payments.services.processes.model.ProcessProgressDetails
 import org.bronco.payments.services.processes.model.ProgressType
 import org.bronco.payments.utils.CustomerDataGenerators.generateCreateCustomerRequest
+import org.bronco.payments.utils.CustomerDataGenerators.generateRetrieveCustomerResponse
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -145,7 +146,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    fun createCustomerById_whenInvalidRequest_then400IsReturned() = runTest {
+    fun retrieveCustomer_whenInvalidRequest_then400IsReturned() = runTest {
         val requestId = "invalid-uuid"
         val badRequest = HttpStatus.BAD_REQUEST
         val response = PaymentsErrorResponse(
@@ -164,7 +165,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    fun createCustomerById_whenCustomerWasNotFound_then404IsReturned() = runTest {
+    fun retrieveCustomer_whenCustomerWasNotFound_then404IsReturned() = runTest {
         val customerId = UUID.randomUUID()
         val notFound = HttpStatus.NOT_FOUND
         val response = PaymentsErrorResponse(
@@ -183,6 +184,20 @@ class CustomerControllerTest {
             .expectStatus().isNotFound
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody().json(objectWriter.writeValueAsString(response))
+        coVerify(exactly = 1) { customerService.retrieveCustomerById(customerId) }
+    }
+
+    @Test
+    fun retrieveCustomerById_whenCustomerWasFound_thenCustomerIsReturned() = runTest {
+        val customerId = UUID.randomUUID()
+        val responsePayload = generateRetrieveCustomerResponse(customerId)
+        coEvery { customerService.retrieveCustomerById(customerId) } returns responsePayload
+
+        webTestClient.get().uri("/customers/{id}", customerId)
+            .exchange()
+            .expectStatus().isOk
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody().json(objectWriter.writeValueAsString(responsePayload))
         coVerify(exactly = 1) { customerService.retrieveCustomerById(customerId) }
     }
 }
