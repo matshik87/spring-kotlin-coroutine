@@ -17,6 +17,7 @@ import org.bronco.payments.utils.toUuid
 import org.bronco.payments.validation.customer.ValidUuid
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import io.swagger.v3.oas.annotations.parameters.RequestBody as ApiRequestBody
 
@@ -95,7 +96,7 @@ open class CustomerController(
         ]
     )
     @GetMapping(path = ["{id}"], produces = [MediaType.APPLICATION_JSON_VALUE])
-    @Valid
+    @Validated
     suspend fun retrieveCustomer(@ValidUuid @PathVariable("id") customerId: String): ResponseEntity<RetrieveCustomerResponse> {
         return ResponseEntity.ok(customerService.retrieveCustomerById(customerId.toUuid()))
     }
