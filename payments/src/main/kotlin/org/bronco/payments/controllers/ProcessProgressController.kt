@@ -15,7 +15,10 @@ import org.bronco.payments.model.ResourceType
 import org.bronco.payments.repositories.progress.impl.ProcessProgressRepository
 import org.bronco.payments.services.processes.model.ProcessName
 import org.bronco.payments.services.processes.model.ProcessProgressDetails
+import org.bronco.payments.validation.customer.IsProcessNameValid
+import org.bronco.payments.validation.customer.ValidUuid
 import org.springframework.http.ResponseEntity
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -25,7 +28,7 @@ import java.util.*
 @Tag(name = "process", description = "Operations regards processes progress")
 @RestController
 @RequestMapping(path = ["processProgress"])
-class ProcessProgressController(
+open class ProcessProgressController(
     private val repository: ProcessProgressRepository
 ) {
     @Operation(
@@ -85,10 +88,11 @@ class ProcessProgressController(
             )
         ]
     )
+    @Validated
     @GetMapping(path = ["/{processName}/{processId}"])
     suspend fun retrieveProcessDetails(
-        @PathVariable processName: String,
-        @PathVariable processId: String
+        @IsProcessNameValid @PathVariable processName: String,
+        @ValidUuid @PathVariable processId: String
     ): ResponseEntity<ProcessProgressDetails> = coroutineScope {
         val processUuid = UUID.fromString(processId)
         repository.retrieveProcessDetails(UUID.fromString(processId), ProcessName.valueOf(processName))

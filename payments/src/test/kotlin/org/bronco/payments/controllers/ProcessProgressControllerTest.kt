@@ -89,5 +89,41 @@ class ProcessProgressControllerTest {
         coVerify(exactly = 1) { repository.retrieveProcessDetails(processUuid, processName) }
     }
 
-    //TODO: add validation cases
+    @Test
+    fun retrieveProcessDetails_whenProcessNameIsInvalid_then400WithErrorDetailsIsReturned() = runTest {
+        val processUuid = UUID.randomUUID()
+        val processName = "test-process-name"
+        val badRequest = HttpStatus.BAD_REQUEST
+        val response = PaymentsErrorResponse(
+            code = badRequest.value(), status = badRequest.name, type = ErrorTypes.VALIDATION,
+            details = listOf(ErrorDetail(value = null, field = null, message = "An improper process name was provided"))
+        )
+
+        webTestClient.get().uri("/processProgress/{processName}/{processId}", processName, processUuid)
+            .exchange()
+            .expectStatus().isBadRequest
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody().json(objectWriter.writeValueAsString(response))
+
+        coVerify(exactly = 0) { repository.retrieveProcessDetails(any(), any()) }
+    }
+
+    @Test
+    fun retrieveProcessDetails_whenProcessIdIsInvalid_then400WithErrorDetailsIsReturned() = runTest {
+        val processUuid = "test-value"
+        val processName = ProcessName.CREATE_CUSTOMER.name
+        val badRequest = HttpStatus.BAD_REQUEST
+        val response = PaymentsErrorResponse(
+            code = badRequest.value(), status = badRequest.name, type = ErrorTypes.VALIDATION,
+            details = listOf(ErrorDetail(value = null, field = null, message = "Invalid UUID identifier was provided"))
+        )
+
+        webTestClient.get().uri("/processProgress/{processName}/{processId}", processName, processUuid)
+            .exchange()
+            .expectStatus().isBadRequest
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody().json(objectWriter.writeValueAsString(response))
+
+        coVerify(exactly = 0) { repository.retrieveProcessDetails(any(), any()) }
+    }
 }
