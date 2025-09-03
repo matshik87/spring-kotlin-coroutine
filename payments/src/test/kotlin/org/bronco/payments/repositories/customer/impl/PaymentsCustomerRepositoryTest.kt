@@ -2,10 +2,12 @@ package org.bronco.payments.repositories.customer.impl
 
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.apache.commons.lang3.RandomStringUtils
-import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.fail
+import org.assertj.core.api.Assertions.*
+import org.bronco.payments.model.ResourceNotFoundException
+import org.bronco.payments.model.ResourceType
 import org.bronco.payments.repositories.customer.CustomerData
 import org.bronco.payments.schema.jooq.model.tables.records.CustomerRecord
 import org.bronco.payments.schema.jooq.model.tables.references.CUSTOMER
@@ -111,6 +113,28 @@ open class PaymentsCustomerRepositoryTest {
         val result = repository.createUser(customerId, customer)
 
         assertThat(result.errorMessage).isNotBlank()
+        assertThat(repository.findById(customerId)).isNull()
+    }
+
+    @Test
+    fun deleteById_whenCustomerExists_thenEntityIsRemoved() = runTest {
+        val customer = generateCustomer(UUID.randomUUID())
+        val customerId = customer.customerId!!
+
+        repository.deleteById(customerId)
+
+        assertThat(repository.findById(customerId)).isNull()
+    }
+
+    @Test
+    fun deleteById_whenCustomerDoesNotExist_thenExceptionIsThrown() = runTest {
+        val customerId = UUID.randomUUID()
+        val expectation = ResourceNotFoundException(customerId, ResourceType.CUSTOMER)
+
+        assertThatThrownBy { runBlocking { repository.deleteById(customerId) } }
+            .usingRecursiveComparison()
+            .isEqualTo(expectation)
+
         assertThat(repository.findById(customerId)).isNull()
     }
 

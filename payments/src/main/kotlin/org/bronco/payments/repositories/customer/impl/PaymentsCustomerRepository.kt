@@ -1,6 +1,10 @@
 package org.bronco.payments.repositories.customer.impl
 
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.await
+import org.bronco.payments.model.ResourceNotFoundException
+import org.bronco.payments.model.ResourceType
+import org.bronco.payments.repositories.ResourceCouldNotBeenRemoved
 import org.bronco.payments.repositories.customer.CustomerData
 import org.bronco.payments.repositories.customer.CustomerRepository
 import org.bronco.payments.schema.jooq.model.tables.Customer
@@ -77,6 +81,26 @@ open class PaymentsCustomerRepository(
                 .fetchAsync()
                 .await()
                 .firstOrNull()?.into(CustomerData::class.java)
+        }
+    }
+
+    override suspend fun deleteById(id: UUID): Unit = coroutineScope {
+        context.transactionCoroutine { transactional ->
+            DSL.using(transactional).deleteFrom(CUSTOMER).where(CUSTOMER.ID.eq(id))
+                .executeAsync().handleAsync { amount, throwable ->
+                    if (amount == 0) {
+                        throw ResourceNotFoundException(id, ResourceType.CUSTOMER)
+                    }
+                    if (throwable != null) {
+                        logger.error("Customer identified by id: ${id} could not be deleted", throwable)
+                        throw ResourceCouldNotBeenRemoved(
+                            id,
+                            ResourceType.CUSTOMER,
+                            "Customer could not be deleted",
+                            "Something unexpected has happened"
+                        )
+                    }
+                }.await()
         }
     }
 }
