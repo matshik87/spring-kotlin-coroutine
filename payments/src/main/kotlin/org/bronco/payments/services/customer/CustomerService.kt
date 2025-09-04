@@ -16,4 +16,5 @@ interface CustomerService {
     suspend fun executeIfFound(email: String?, processing: suspend (CustomerData) -> Unit): CustomerData?
     suspend fun retrieveCustomerById(customerId: UUID): RetrieveCustomerResponse
     suspend fun createNewCustomer(processId: UUID, customerRequest: CreateCustomerRequest): CreateCustomerResponse
+    suspend fun deleteById(id: UUID): Unit
 }

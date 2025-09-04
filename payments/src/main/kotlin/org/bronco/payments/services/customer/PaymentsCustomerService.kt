@@ -63,7 +63,7 @@ open class PaymentsCustomerService(
         )
     private val CustomerData.toRetrievalResponse: RetrieveCustomerResponse
         get() = RetrieveCustomerResponse(
-            customerId = null,
+            customerId = customerId,
             firstName = firstName,
             middleName = middleName,
             lastName = lastName,
@@ -119,4 +119,8 @@ open class PaymentsCustomerService(
     override suspend fun retrieveCustomerById(customerId: UUID): RetrieveCustomerResponse =
         (repository.findById(customerId)?.toRetrievalResponse)
         ?: throw ResourceNotFoundException(customerId, ResourceType.CUSTOMER)
+
+    override suspend fun deleteById(id: UUID): Unit {
+        repository.deleteById(id)
+    }
 }

@@ -1,6 +1,5 @@
 package org.bronco.payments.utils
 
-import kotlinx.coroutines.coroutineScope
 import org.apache.commons.lang3.RandomStringUtils
 import org.bronco.payments.controllers.api.CreateCustomerRequest
 import org.bronco.payments.controllers.api.RetrieveCustomerResponse
@@ -10,7 +9,7 @@ import java.time.LocalDate
 import java.util.*
 
 object CustomerDataGenerators {
-    fun generateCustomerData(customerId: UUID? = null): CustomerData {
+    fun generateCustomerData(customerId: UUID? = null, errorMessage: String? = null): CustomerData {
         val randomStringUtils = RandomStringUtils.secure()
         val nationality = "UK"
 
@@ -28,7 +27,8 @@ object CustomerDataGenerators {
             password = randomStringUtils.nextAlphabetic(15),
             email = "${randomStringUtils.nextAscii(5, 10)}@test.com",
             phoneNumber = "+${randomStringUtils.nextNumeric(8)}",
-            secondaryPhoneNumber = "+${randomStringUtils.nextNumeric(8)}"
+            secondaryPhoneNumber = "+${randomStringUtils.nextNumeric(8)}",
+            errorMessage = errorMessage
         )
     }
 
