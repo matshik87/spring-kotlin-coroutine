@@ -4,6 +4,7 @@ import org.bronco.payments.controllers.api.ErrorDetail
 import org.bronco.payments.controllers.api.ErrorTypes
 import org.bronco.payments.controllers.api.PaymentsErrorResponse
 import org.bronco.payments.model.ResourceNotFoundException
+import org.bronco.payments.repositories.ResourceCouldNotBeenRemoved
 import org.springframework.context.MessageSourceResolvable
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -27,6 +28,7 @@ class BroncoControllerAdvice {
                     error.field,
                     error.defaultMessage
                 )
+
                 is ObjectError -> ErrorDetail(error.objectName, null, error.defaultMessage)
                 else -> ErrorDetail(null, null, error.defaultMessage)
             }
@@ -67,7 +69,6 @@ class BroncoControllerAdvice {
         )
     }
 
-    //TODO: most probably it's useless now, to be checked
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleMethodValidationException(exception: MethodArgumentNotValidException): ResponseEntity<PaymentsErrorResponse> {
         val violationDetails = exception.allErrors.map { error: ObjectError ->
@@ -103,6 +104,20 @@ class BroncoControllerAdvice {
                     notFound.name,
                     ErrorTypes.RESOURCE_NOT_FOUND,
                     listOf(ErrorDetail(null, null, exception.message))
+                )
+            )
+    }
+
+    @ExceptionHandler(ResourceCouldNotBeenRemoved::class)
+    fun handleResourceCouldNotBeenRemoved(exception: ResourceCouldNotBeenRemoved): ResponseEntity<PaymentsErrorResponse> {
+        val badRequest = HttpStatus.BAD_REQUEST
+        return ResponseEntity.status(badRequest)
+            .body(
+                PaymentsErrorResponse(
+                    badRequest.value(),
+                    badRequest.name,
+                    ErrorTypes.RESOURCE_NOT_REMOVABLE,
+                    listOf(ErrorDetail(null, null, exception.details ?: exception.message))
                 )
             )
     }

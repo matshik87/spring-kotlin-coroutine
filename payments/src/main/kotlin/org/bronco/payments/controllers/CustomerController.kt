@@ -9,12 +9,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.bronco.payments.controllers.api.CreateCustomerRequest
+import org.bronco.payments.controllers.api.PaymentsErrorResponse
 import org.bronco.payments.controllers.api.RetrieveCustomerResponse
 import org.bronco.payments.services.customer.CustomerService
 import org.bronco.payments.services.kafka.producer.customer.CustomerKafkaProducer
 import org.bronco.payments.services.processes.model.ProcessProgressDetails
 import org.bronco.payments.utils.toUuid
 import org.bronco.payments.validation.customer.ValidUuid
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -99,5 +101,48 @@ open class CustomerController(
     @Validated
     suspend fun retrieveCustomer(@ValidUuid @PathVariable("id") customerId: String): ResponseEntity<RetrieveCustomerResponse> {
         return ResponseEntity.ok(customerService.retrieveCustomerById(customerId.toUuid()))
+    }
+
+    @Operation(
+        method = "DELETE",
+        summary = "Removes a customer identified by id",
+        parameters = [
+            Parameter(
+                name = "id", description = "Customer id(UUID)", required = true, `in` = ParameterIn.PATH,
+                allowEmptyValue = false
+            )
+        ],
+        responses = [
+            ApiResponse(
+                responseCode = "204",
+                description = "Customer was removed"
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "Customer does not exist",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = PaymentsErrorResponse::class)
+                    )
+                ]
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Customer could not be removed, Invalid customer id was used, Customer could not be removed",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = PaymentsErrorResponse::class)
+                    )
+                ]
+            )
+        ]
+    )
+    @DeleteMapping(path = ["{id}"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Validated
+    suspend fun deleteCustomer(@ValidUuid @PathVariable("id") customerId: String): Unit {
+        return customerService.deleteById(customerId.toUuid())
     }
 }

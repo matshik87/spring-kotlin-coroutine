@@ -12,6 +12,7 @@ import org.bronco.payments.controllers.api.ErrorTypes
 import org.bronco.payments.controllers.api.PaymentsErrorResponse
 import org.bronco.payments.model.ResourceNotFoundException
 import org.bronco.payments.model.ResourceType
+import org.bronco.payments.repositories.ResourceCouldNotBeenRemoved
 import org.bronco.payments.services.customer.CustomerService
 import org.bronco.payments.services.kafka.producer.customer.CustomerKafkaProducer
 import org.bronco.payments.services.processes.model.ProcessName
@@ -46,7 +47,7 @@ class CustomerControllerTest {
     @MockkBean
     private lateinit var customerKafkaProducer: CustomerKafkaProducer
 
-    @MockkBean
+    @MockkBean(relaxed = true)
     private lateinit var customerService: CustomerService
 
     @Autowired
@@ -199,5 +200,77 @@ class CustomerControllerTest {
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody().json(objectWriter.writeValueAsString(responsePayload))
         coVerify(exactly = 1) { customerService.retrieveCustomerById(customerId) }
+    }
+
+    @Test
+    fun deleteCustomerById_whenNoException_then204IsReturned() = runTest {
+        val customerId = UUID.randomUUID()
+
+        webTestClient.delete().uri("/customers/{id}", customerId)
+            .exchange()
+            .expectStatus().isNoContent
+            .expectBody().isEmpty
+        coVerify(exactly = 1) { customerService.deleteById(customerId) }
+    }
+
+    @Test
+    fun deleteCustomerById_whenCustomerWasNotFound_then400WithPayloadIsReturned() = runTest {
+        val customerId = UUID.randomUUID()
+        val exception = ResourceNotFoundException(customerId, ResourceType.CUSTOMER)
+        coEvery { customerService.deleteById(any()) } throws exception
+        val expectation = PaymentsErrorResponse(
+            HttpStatus.NOT_FOUND.value(),
+            HttpStatus.NOT_FOUND.name,
+            ErrorTypes.RESOURCE_NOT_FOUND,
+            listOf(ErrorDetail(null, null, exception.message))
+        )
+
+        webTestClient.delete().uri("/customers/{id}", customerId)
+            .exchange()
+            .expectStatus().isNotFound
+            .expectBody().json(objectWriter.writeValueAsString(expectation))
+        coVerify(exactly = 1) { customerService.deleteById(customerId) }
+    }
+
+    @Test
+    fun deleteCustomerById_whenCustomerCouldNotBeRemoved_then400WithPayloadIsReturned() = runTest {
+        val customerId = UUID.randomUUID()
+        val exception = ResourceCouldNotBeenRemoved(customerId, ResourceType.CUSTOMER, "could not be removed")
+        coEvery { customerService.deleteById(any()) } throws exception
+        val expectation = PaymentsErrorResponse(
+            HttpStatus.BAD_REQUEST.value(),
+            HttpStatus.BAD_REQUEST.name,
+            ErrorTypes.RESOURCE_NOT_REMOVABLE,
+            listOf(ErrorDetail(null, null, exception.message))
+        )
+
+        webTestClient.delete().uri("/customers/{id}", customerId)
+            .exchange()
+            .expectStatus().isBadRequest
+            .expectBody().json(objectWriter.writeValueAsString(expectation))
+        coVerify(exactly = 1) { customerService.deleteById(customerId) }
+    }
+
+    @Test
+    fun deleteCustomerById_whenCustomerIdIsInvalid_then400WithPayloadIsReturned() = runTest {
+        val customerId = "testValue"
+        val expectation = PaymentsErrorResponse(
+            code = HttpStatus.BAD_REQUEST.value(),
+            status = HttpStatus.BAD_REQUEST.name,
+            type = ErrorTypes.VALIDATION,
+            details = listOf(
+                ErrorDetail(
+                    value = null,
+                    field = null,
+                    message = "Invalid UUID identifier was provided",
+                )
+            )
+        )
+
+        webTestClient.delete().uri("/customers/{id}", customerId)
+            .exchange()
+            .expectStatus().isBadRequest
+            .expectBody().json(objectWriter.writeValueAsString(expectation))
+        coVerify(exactly = 0) { customerService.deleteById(any()) }
     }
 }
