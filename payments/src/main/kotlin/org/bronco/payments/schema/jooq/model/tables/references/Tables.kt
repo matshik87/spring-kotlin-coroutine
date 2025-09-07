@@ -4,10 +4,16 @@
 package org.bronco.payments.schema.jooq.model.tables.references
 
 
+import org.bronco.payments.schema.jooq.model.tables.Account
 import org.bronco.payments.schema.jooq.model.tables.Customer
 import org.bronco.payments.schema.jooq.model.tables.ProcessProgress
 
 
+
+/**
+ * The table <code>payments.account</code>.
+ */
+val ACCOUNT: Account = Account.ACCOUNT
 
 /**
  * The table <code>payments.customer</code>.

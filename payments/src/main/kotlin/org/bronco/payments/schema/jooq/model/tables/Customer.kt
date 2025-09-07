@@ -11,16 +11,19 @@ import kotlin.collections.Collection
 import kotlin.collections.List
 
 import org.bronco.payments.schema.jooq.model.Payments
+import org.bronco.payments.schema.jooq.model.keys.ACCOUNT__FK_CUSTOMER_ACCOUNT
 import org.bronco.payments.schema.jooq.model.keys.PK_CUSTOMER_ID
 import org.bronco.payments.schema.jooq.model.keys.UQ_CUSTOMER_EMAIL
 import org.bronco.payments.schema.jooq.model.keys.UQ_CUSTOMER_LOGIN
 import org.bronco.payments.schema.jooq.model.keys.UQ_CUSTOMER_PHONE_NUMBER
+import org.bronco.payments.schema.jooq.model.tables.Account.AccountPath
 import org.bronco.payments.schema.jooq.model.tables.records.CustomerRecord
 import org.jooq.Condition
 import org.jooq.Field
 import org.jooq.ForeignKey
 import org.jooq.InverseForeignKey
 import org.jooq.Name
+import org.jooq.Path
 import org.jooq.PlainSQL
 import org.jooq.QueryPart
 import org.jooq.Record
@@ -33,6 +36,7 @@ import org.jooq.TableField
 import org.jooq.TableOptions
 import org.jooq.UniqueKey
 import org.jooq.impl.DSL
+import org.jooq.impl.Internal
 import org.jooq.impl.SQLDataType
 import org.jooq.impl.TableImpl
 
@@ -152,9 +156,38 @@ open class Customer(
      * Create a <code>payments.customer</code> table reference
      */
     constructor(): this(DSL.name("customer"), null)
+
+    constructor(path: Table<out Record>, childPath: ForeignKey<out Record, CustomerRecord>?, parentPath: InverseForeignKey<out Record, CustomerRecord>?): this(Internal.createPathAlias(path, childPath, parentPath), path, childPath, parentPath, CUSTOMER, null, null)
+
+    /**
+     * A subtype implementing {@link Path} for simplified path-based joins.
+     */
+    open class CustomerPath : Customer, Path<CustomerRecord> {
+        constructor(path: Table<out Record>, childPath: ForeignKey<out Record, CustomerRecord>?, parentPath: InverseForeignKey<out Record, CustomerRecord>?): super(path, childPath, parentPath)
+        private constructor(alias: Name, aliased: Table<CustomerRecord>): super(alias, aliased)
+        override fun `as`(alias: String): CustomerPath = CustomerPath(DSL.name(alias), this)
+        override fun `as`(alias: Name): CustomerPath = CustomerPath(alias, this)
+        override fun `as`(alias: Table<*>): CustomerPath = CustomerPath(alias.qualifiedName, this)
+    }
     override fun getSchema(): Schema? = if (aliased()) null else Payments.PAYMENTS
     override fun getPrimaryKey(): UniqueKey<CustomerRecord> = PK_CUSTOMER_ID
     override fun getUniqueKeys(): List<UniqueKey<CustomerRecord>> = listOf(UQ_CUSTOMER_EMAIL, UQ_CUSTOMER_LOGIN, UQ_CUSTOMER_PHONE_NUMBER)
+
+    private lateinit var _account: AccountPath
+
+    /**
+     * Get the implicit to-many join path to the <code>payments.account</code>
+     * table
+     */
+    fun account(): AccountPath {
+        if (!this::_account.isInitialized)
+            _account = AccountPath(this, null, ACCOUNT__FK_CUSTOMER_ACCOUNT.inverseKey)
+
+        return _account;
+    }
+
+    val account: AccountPath
+        get(): AccountPath = account()
     override fun `as`(alias: String): Customer = Customer(DSL.name(alias), this)
     override fun `as`(alias: Name): Customer = Customer(alias, this)
     override fun `as`(alias: Table<*>): Customer = Customer(alias.qualifiedName, this)

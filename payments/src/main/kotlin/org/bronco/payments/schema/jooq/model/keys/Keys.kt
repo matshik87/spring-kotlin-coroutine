@@ -4,10 +4,13 @@
 package org.bronco.payments.schema.jooq.model.keys
 
 
+import org.bronco.payments.schema.jooq.model.tables.Account
 import org.bronco.payments.schema.jooq.model.tables.Customer
 import org.bronco.payments.schema.jooq.model.tables.ProcessProgress
+import org.bronco.payments.schema.jooq.model.tables.records.AccountRecord
 import org.bronco.payments.schema.jooq.model.tables.records.CustomerRecord
 import org.bronco.payments.schema.jooq.model.tables.records.ProcessProgressRecord
+import org.jooq.ForeignKey
 import org.jooq.UniqueKey
 import org.jooq.impl.DSL
 import org.jooq.impl.Internal
@@ -18,8 +21,15 @@ import org.jooq.impl.Internal
 // UNIQUE and PRIMARY KEY definitions
 // -------------------------------------------------------------------------
 
+val PK_ACCOUNT_ID: UniqueKey<AccountRecord> = Internal.createUniqueKey(Account.ACCOUNT, DSL.name("pk_account_id"), arrayOf(Account.ACCOUNT.ID), true)
 val PK_CUSTOMER_ID: UniqueKey<CustomerRecord> = Internal.createUniqueKey(Customer.CUSTOMER, DSL.name("pk_customer_id"), arrayOf(Customer.CUSTOMER.ID), true)
 val UQ_CUSTOMER_EMAIL: UniqueKey<CustomerRecord> = Internal.createUniqueKey(Customer.CUSTOMER, DSL.name("uq_customer_email"), arrayOf(Customer.CUSTOMER.EMAIL), true)
 val UQ_CUSTOMER_LOGIN: UniqueKey<CustomerRecord> = Internal.createUniqueKey(Customer.CUSTOMER, DSL.name("uq_customer_login"), arrayOf(Customer.CUSTOMER.LOGIN), true)
 val UQ_CUSTOMER_PHONE_NUMBER: UniqueKey<CustomerRecord> = Internal.createUniqueKey(Customer.CUSTOMER, DSL.name("uq_customer_phone_number"), arrayOf(Customer.CUSTOMER.PHONE_NUMBER), true)
 val PK_PROCESS_PROGRESS_KEY: UniqueKey<ProcessProgressRecord> = Internal.createUniqueKey(ProcessProgress.PROCESS_PROGRESS, DSL.name("pk_process_progress_key"), arrayOf(ProcessProgress.PROCESS_PROGRESS.PROCESS_ID, ProcessProgress.PROCESS_PROGRESS.PROCESS_NAME), true)
+
+// -------------------------------------------------------------------------
+// FOREIGN KEY definitions
+// -------------------------------------------------------------------------
+
+val ACCOUNT__FK_CUSTOMER_ACCOUNT: ForeignKey<AccountRecord, CustomerRecord> = Internal.createForeignKey(Account.ACCOUNT, DSL.name("fk_customer_account"), arrayOf(Account.ACCOUNT.CUSTOMER_REFERENCE), org.bronco.payments.schema.jooq.model.keys.PK_CUSTOMER_ID, arrayOf(Customer.CUSTOMER.ID), true)

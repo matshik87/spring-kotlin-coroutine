@@ -6,4 +6,5 @@
     <include file="db/changeSets/customer-table.sql"/>
     <include file="db/changeSets/progress-table.sql"/>
     <include file="db/changeSets/add_residence_country_code_to_customer.sql"/>
+    <include file="db/changeSets/add_account_table.sql"/>
 </databaseChangeLog>
