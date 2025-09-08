@@ -4,6 +4,8 @@
 package org.bronco.payments.schema.jooq.model.tables
 
 
+import org.bronco.payments.model.Currencies
+import org.bronco.payments.repositories.account.model.AccountStatus
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.UUID
@@ -12,6 +14,8 @@ import kotlin.collections.Collection
 import kotlin.collections.List
 
 import org.bronco.payments.schema.jooq.model.Payments
+import org.bronco.payments.schema.jooq.model.converters.AccountStatusConverter
+import org.bronco.payments.schema.jooq.model.converters.CurrencyConverter
 import org.bronco.payments.schema.jooq.model.keys.ACCOUNT__FK_CUSTOMER_ACCOUNT
 import org.bronco.payments.schema.jooq.model.keys.PK_ACCOUNT_ID
 import org.bronco.payments.schema.jooq.model.tables.Customer.CustomerPath
@@ -69,6 +73,8 @@ open class Account(
          * The reference instance of <code>payments.account</code>
          */
         val ACCOUNT: Account = Account()
+        val ACCOUNT_STATUS_CONVERTER = AccountStatusConverter()
+        val CURRENCY_CONVERTER = CurrencyConverter()
     }
 
     /**
@@ -84,7 +90,7 @@ open class Account(
     /**
      * The column <code>payments.account.currency_code</code>.
      */
-    val CURRENCY_CODE: TableField<AccountRecord, String?> = createField(DSL.name("currency_code"), SQLDataType.VARCHAR(2).nullable(false), this, "")
+    val CURRENCY_CODE: TableField<AccountRecord, Currencies?> = createField(DSL.name("currency_code"), SQLDataType.VARCHAR(2).nullable(false), this, "", CURRENCY_CONVERTER)
 
     /**
      * The column <code>payments.account.balance</code>.
@@ -99,7 +105,7 @@ open class Account(
     /**
      * The column <code>payments.account.status</code>.
      */
-    val STATUS: TableField<AccountRecord, String?> = createField(DSL.name("status"), SQLDataType.VARCHAR(15).nullable(false), this, "")
+    val STATUS: TableField<AccountRecord, AccountStatus?> = createField(DSL.name("status"), SQLDataType.VARCHAR(15).nullable(false), this, "", ACCOUNT_STATUS_CONVERTER)
 
     /**
      * The column <code>payments.account.creation_date</code>.

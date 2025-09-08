@@ -3,8 +3,8 @@
 CREATE TABLE payments.account
 (
     id                 UUID,
-    currency_code      varchar(2)  not null,
-    balance            numeric(12, 2) default 0,
+    currency_code      varchar(3)  not null,
+    balance            numeric(12, 2) default 0.00,
     name               varchar(50),
     status             varchar(15) not null,
     creation_date      timestamp   not null,
