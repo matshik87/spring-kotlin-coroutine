@@ -1,6 +1,7 @@
 package org.bronco.payments.controllers.api
 
 import com.fasterxml.jackson.annotation.JsonFormat
+import org.bronco.payments.repositories.account.model.AccountDto
 import java.time.LocalDate
 import java.util.*
 
@@ -17,5 +18,6 @@ data class RetrieveCustomerResponse(
     val email: String,
     val phoneNumber: String?,
     val secondaryPhoneNumber: String? = null,
-    val passwordChangeRequired: Boolean? = null
+    val passwordChangeRequired: Boolean? = null,
+    val accounts: List<AccountDto> = emptyList()
 )

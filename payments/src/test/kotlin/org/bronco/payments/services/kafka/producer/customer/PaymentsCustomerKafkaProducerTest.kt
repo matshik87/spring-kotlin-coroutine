@@ -10,8 +10,12 @@ import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility.await
 import org.bronco.payments.config.KafkaTestConfig
 import org.bronco.payments.config.properties.BroncoKafkaProperties
+import org.bronco.payments.model.Currencies
+import org.bronco.payments.repositories.account.impl.PaymentsAccountRepository
+import org.bronco.payments.repositories.account.model.AccountStatus
 import org.bronco.payments.repositories.customer.impl.PaymentsCustomerRepository
 import org.bronco.payments.repositories.progress.ProgressRepository
+import org.bronco.payments.schema.jooq.model.tables.references.ACCOUNT
 import org.bronco.payments.schema.jooq.model.tables.references.CUSTOMER
 import org.bronco.payments.schema.jooq.model.tables.references.PROCESS_PROGRESS
 import org.bronco.payments.services.processes.model.ProcessName
@@ -27,7 +31,9 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
 import org.springframework.kafka.core.KafkaTemplate
+import java.math.BigDecimal
 import java.time.LocalDate
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
@@ -56,6 +62,9 @@ class PaymentsCustomerKafkaProducerTest {
     private lateinit var customerRepository: PaymentsCustomerRepository
 
     @Autowired
+    private lateinit var accountRepository: PaymentsAccountRepository
+
+    @Autowired
     private lateinit var adminClient: AdminClient
 
     @Autowired
@@ -67,17 +76,19 @@ class PaymentsCustomerKafkaProducerTest {
         adminClient.deleteTopics(listOf(createCustomer.topicName))
         adminClient.createTopics(listOf(NewTopic(createCustomer.topicName, 1, 1)))
         dslContext.deleteFrom(PROCESS_PROGRESS)
+        dslContext.deleteFrom(ACCOUNT)
         dslContext.deleteFrom(CUSTOMER)
     }
 
     @AfterEach
     fun tearDown() {
         dslContext.deleteFrom(PROCESS_PROGRESS)
+        dslContext.deleteFrom(ACCOUNT)
         dslContext.deleteFrom(CUSTOMER)
     }
 
     @Test
-    fun dispatchCreateCustomer_withValidRequest_customerIsCreated() = runTest {
+    fun dispatchCreateCustomer_withValidRequest_customerAndAccountAreCreated() = runTest {
         val payload = generateCreateCustomerRequest(email)
 
         kafkaProducer.dispatchCreateCustomer(payload)
@@ -99,6 +110,18 @@ class PaymentsCustomerKafkaProducerTest {
             .returns(payload.nationality) { it!!.nationality }
             .returns(payload.phoneNumber) { it!!.phoneNumber }
             .returns(payload.secondaryPhoneNumber) { it!!.secondaryPhoneNumber }
+        assertThat(result!!.customerId!!)
+            .matches { customerId: UUID ->
+                runBlocking {
+                    assertThat(accountRepository.getCustomerAccountsByStatus(customerId, setOf(AccountStatus.INACTIVE)))
+                        .singleElement()
+                        .returns(Currencies.USD.name) { it.currencyCode }
+                        .returns(AccountStatus.INACTIVE) { it.status }
+                        .returns(BigDecimal.ZERO.setScale(2)) { it.balance }
+                        .returns(customerId) { it.customerId }
+                }
+                true
+            }
         assertThat(result!!.login).isNotBlank()
         assertThat(result.password).isNotBlank()
         val progress = dslContext.selectFrom(PROCESS_PROGRESS).where(

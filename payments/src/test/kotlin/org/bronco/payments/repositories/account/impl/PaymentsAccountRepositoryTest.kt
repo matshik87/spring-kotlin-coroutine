@@ -97,6 +97,32 @@ open class PaymentsAccountRepositoryTest {
             .isEqualTo(expectation)
     }
 
+    @Test
+    fun getAllCustomerAccounts_whenAccountsForCustomerWereFound_returnResult() = runTest {
+        val customer = generateCustomer(UUID.randomUUID())
+        val customerId = customer.customerId!!
+        val expectation =
+            listOf(
+                generateAccount(customerId, AccountStatus.OPEN),
+                generateAccount(customerId, AccountStatus.BLOCKED, accountBalance = BigDecimal("14.23"))
+            )
+
+        val result = repository.getAllCustomerAccounts(customerId)
+
+        assertThat(result)
+            .usingRecursiveComparison()
+            .isEqualTo(expectation)
+    }
+
+    @Test
+    fun getAllCustomerAccounts_whenNoAccountForCustomerIdWasFound_returnEmptyList() = runTest {
+        val customerId = UUID.randomUUID()
+
+        val result = repository.getAllCustomerAccounts(customerId)
+
+        assertThat(result).isEmpty()
+    }
+
     private suspend fun generateCustomer(customerId: UUID? = null): CustomerData = coroutineScope {
         val randomizedCustomerData = generateCustomerData(customerId)
         dslContext.transactionCoroutine { transactional ->

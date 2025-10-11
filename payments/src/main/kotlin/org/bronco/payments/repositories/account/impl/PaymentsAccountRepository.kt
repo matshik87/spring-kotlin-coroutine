@@ -20,7 +20,7 @@ import java.time.LocalDateTime
 import java.util.*
 
 @Repository
-class PaymentsAccountRepository(
+open class PaymentsAccountRepository(
     private val context: DSLContext
 ) : AccountRepository {
     private val logger: Logger = LoggerFactory.getLogger(this::class.java)
@@ -43,7 +43,7 @@ class PaymentsAccountRepository(
                 transaction.batchInsert(accountRecord).executeAsync()
                     .handleAsync { results, throwable ->
                         if (throwable != null || results.first() != 1) {
-                            logger.error("An account could not be created for customer ${customerId}", throwable)
+                            logger.error("An account could not be created for customer $customerId", throwable)
                             throw ResourceCreationException(ResourceType.ACCOUNT)
                         }
                         logger.info("An account was successfully created for customer ${customerId}")
@@ -53,7 +53,10 @@ class PaymentsAccountRepository(
         }
     }
 
-    override suspend fun getCustomerAccountsByStatus(customerId: UUID, statuses: Set<AccountStatus>): List<AccountData> =
+    override suspend fun getCustomerAccountsByStatus(
+        customerId: UUID,
+        statuses: Set<AccountStatus>
+    ): List<AccountData> =
         coroutineScope {
             context.transactionCoroutine { transactional ->
                 val transaction = DSL.using(transactional)
@@ -63,6 +66,19 @@ class PaymentsAccountRepository(
                         table.CUSTOMER_REFERENCE.eq(customerId)
                             .and(table.STATUS.`in`(statuses))
                     )
+                    .fetchAsync()
+                    .await()
+                    .into(AccountData::class.java)
+            }
+        }
+
+    override suspend fun getAllCustomerAccounts(customerId: UUID): List<AccountData> =
+        coroutineScope {
+            context.transactionCoroutine { transactional ->
+                val transaction = DSL.using(transactional)
+                val table = table()
+                transaction.selectFrom(table)
+                    .where(table.CUSTOMER_REFERENCE.eq(customerId))
                     .fetchAsync()
                     .await()
                     .into(AccountData::class.java)

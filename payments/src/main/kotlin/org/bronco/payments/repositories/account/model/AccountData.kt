@@ -18,3 +18,19 @@ data class AccountData(
     @Column(name = "customer_reference")
     val customerId: UUID
 )
+
+data class AccountDto(
+    val accountId: UUID,
+    val currencyCode: String,
+    val balance: BigDecimal,
+    val accountName: String?,
+    val status: AccountStatus,
+)
+
+fun AccountData.toDto(): AccountDto = AccountDto(
+    accountId = this.accountId,
+    currencyCode = this.currencyCode,
+    balance = this.balance,
+    accountName = this.accountName,
+    status = this.status,
+)

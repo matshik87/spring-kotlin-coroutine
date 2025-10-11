@@ -11,7 +11,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.util.*
-import kotlin.*
 
 @Service
 class CustomerAccountService(
@@ -20,11 +19,11 @@ class CustomerAccountService(
 ) : AccountService {
     companion object {
         private val logger: Logger = LoggerFactory.getLogger(this::class.java)
+        private val notClosedAccountStatuses =
+            setOf(AccountStatus.OPEN, AccountStatus.INACTIVE, AccountStatus.SUSPENDED, AccountStatus.BLOCKED)
     }
 
     override suspend fun createNewAccountOrRetrieveAllExistingAccounts(customerId: UUID): List<AccountData> {
-        val notClosedAccountStatuses =
-            setOf(AccountStatus.OPEN, AccountStatus.INACTIVE, AccountStatus.SUSPENDED, AccountStatus.BLOCKED)
         val accounts = accountRepository.getCustomerAccountsByStatus(customerId, notClosedAccountStatuses)
         return if (accounts.isEmpty()) {
             val processId = UUID.randomUUID()
@@ -56,4 +55,6 @@ class CustomerAccountService(
             accounts
         }
     }
+
+    override suspend fun getAccountsByCustomerId(customerId: UUID): List<AccountData> = accountRepository.getAllCustomerAccounts(customerId)
 }

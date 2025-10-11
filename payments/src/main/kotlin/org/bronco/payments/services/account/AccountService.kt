@@ -5,4 +5,6 @@ import java.util.*
 
 interface AccountService {
     suspend fun createNewAccountOrRetrieveAllExistingAccounts(customerId: UUID): List<AccountData>
+
+    suspend fun getAccountsByCustomerId(customerId: UUID): List<AccountData>
 }

@@ -9,10 +9,13 @@ import org.bronco.payments.controllers.api.CreateCustomerResponse
 import org.bronco.payments.controllers.api.RetrieveCustomerResponse
 import org.bronco.payments.model.ResourceNotFoundException
 import org.bronco.payments.model.ResourceType
+import org.bronco.payments.repositories.account.model.AccountData
+import org.bronco.payments.repositories.account.model.toDto
 import org.bronco.payments.repositories.customer.CustomerData
 import org.bronco.payments.repositories.customer.CustomerRepository
 import org.bronco.payments.repositories.progress.ProgressKey
 import org.bronco.payments.repositories.progress.ProgressRepository
+import org.bronco.payments.services.account.AccountService
 import org.bronco.payments.services.login.PaymentsLoginService
 import org.bronco.payments.services.password.PasswordService
 import org.bronco.payments.services.processes.model.ProcessName
@@ -23,10 +26,11 @@ import java.util.*
 
 @Service
 open class PaymentsCustomerService(
-    private val repository: CustomerRepository,
+    private val customerRepository: CustomerRepository,
     private val passwordService: PasswordService,
     private val loginService: PaymentsLoginService,
     private val progressRepository: ProgressRepository,
+    private val accountService: AccountService,
 ) : CustomerService {
     companion object {
         private fun isPasswordChangeRequired(password: String?) = password.isNullOrBlank()
@@ -61,6 +65,7 @@ open class PaymentsCustomerService(
             requiresPasswordChange = passwordChangeRequired ?: true,
             errorDescription = errorMessage,
         )
+
     private val CustomerData.toRetrievalResponse: RetrieveCustomerResponse
         get() = RetrieveCustomerResponse(
             customerId = customerId,
@@ -86,17 +91,32 @@ open class PaymentsCustomerService(
             val customerId = UUID.randomUUID()
 
             val userCreation = async {
-                val result = repository.createUser(customerId, customerRequest.toNewCustomerData)
-                result
+                customerRepository.createUser(customerId, customerRequest.toNewCustomerData)
             }
             val customerData = userCreation.await()
             launch {
-                val progressType = if (customerData.errorMessage.isNullOrBlank()) ProgressType.FINISHED
-                else ProgressType.FINISHED_WITH_ERROR
                 val key = ProgressKey(processId, ProcessName.CREATE_CUSTOMER)
-                progressRepository.updateProgress(key, progressType, customerId, customerData.errorMessage)
+                if (customerData.errorMessage.isNullOrBlank()) {
+                    progressRepository.updateProgress(key, ProgressType.FINISHED, customerId, customerData.errorMessage)
+                } else {
+                    progressRepository.updateProgress(
+                        key,
+                        ProgressType.FINISHED_WITH_ERROR,
+                        customerId,
+                        customerData.errorMessage
+                    )
+                }
             }
-            customerData.toCreateCustomerResponse
+            if (customerData.errorMessage.isNullOrBlank()) {
+                async {
+                    runCatching { accountService.createNewAccountOrRetrieveAllExistingAccounts(customerId) }
+                        .getOrNull()?.let { accounts ->
+                            customerData.toCreateCustomerResponse(accounts)
+                        }
+                }.await() ?: customerData.toCreateCustomerResponse
+            } else {
+                customerData.toCreateCustomerResponse
+            }
         }
 
     override suspend fun executeIfFound(
@@ -104,7 +124,7 @@ open class PaymentsCustomerService(
         email: String?,
         processing: suspend (CustomerData) -> Unit
     ): CustomerData? {
-        val findById = repository.findByLoginAndEmail(login, email)
+        val findById = customerRepository.findByLoginAndEmail(login, email)
         return findById?.let { entity ->
             processing(entity)
             entity
@@ -116,11 +136,19 @@ open class PaymentsCustomerService(
         processing: suspend (CustomerData) -> Unit
     ): CustomerData? = executeIfFound(null, email, processing)
 
-    override suspend fun retrieveCustomerById(customerId: UUID): RetrieveCustomerResponse =
-        (repository.findById(customerId)?.toRetrievalResponse)
-        ?: throw ResourceNotFoundException(customerId, ResourceType.CUSTOMER)
+    override suspend fun retrieveCustomerById(customerId: UUID): RetrieveCustomerResponse {
+        return customerRepository.findById(customerId)?.let { customer ->
+            customer.toRetrievalResponse(accountService.getAccountsByCustomerId(customer.customerId!!))
+        } ?: throw ResourceNotFoundException(customerId, ResourceType.CUSTOMER)
+    }
 
     override suspend fun deleteById(id: UUID): Unit {
-        repository.deleteById(id)
+        customerRepository.deleteById(id)
     }
+
+    private fun CustomerData.toCreateCustomerResponse(accounts: List<AccountData> = emptyList()): CreateCustomerResponse =
+        this.toCreateCustomerResponse.copy(accounts = accounts.map { account -> account.toDto() })
+
+    private fun CustomerData.toRetrievalResponse(accounts: List<AccountData> = emptyList()): RetrieveCustomerResponse =
+        this.toRetrievalResponse.copy(accounts = accounts.map { account -> account.toDto() })
 }
