@@ -46,7 +46,7 @@ open class PaymentsAccountRepository(
                             logger.error("An account could not be created for customer $customerId", throwable)
                             throw ResourceCreationException(ResourceType.ACCOUNT)
                         }
-                        logger.info("An account was successfully created for customer ${customerId}")
+                        logger.info("An account was successfully created for customer $customerId")
                         accountRecord.into(AccountData::class.java)
                     }.await()
             }

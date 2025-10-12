@@ -124,7 +124,7 @@ class PaymentsCustomerServiceTest {
             }
             coEvery { loginService.generateLogin { any() } } returns customerData.login
             coEvery { passwordService.encode(any()) } returns customerData.password!!
-            coEvery { accountService.createNewAccountOrRetrieveAllExistingAccounts(any()) } returns listOf(accountData)
+            coEvery { accountService.createNewAccountOrRetrieveAllExistingAccounts(any(), processId) } returns listOf(accountData)
 
             val result = service.createNewCustomer(processId, customerRequest)
 

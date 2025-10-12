@@ -73,7 +73,7 @@ open class ProcessProgressRepositoryDataTest {
 
         repository.updateProgress(progressKey, progressType, entityId, updatedProgressDetails)
 
-        val retrievedProgress = repository.retrieveProcessDetails(progressKeyId, progressName)
+        val retrievedProgress = repository.retrieveProcessDetailsByName(progressKeyId, progressName)
         Assertions.assertThat(retrievedProgress).isNotNull()
             .returns(progressKey.id) { it?.id }
             .returns(progressKey.name.name) { it?.name }
@@ -95,7 +95,7 @@ open class ProcessProgressRepositoryDataTest {
 
             repository.updateProgress(newProgressKey, progressType, entityId, updatedProgressDetails)
 
-            val retrievedProgress = repository.retrieveProcessDetails(progressKeyId, progressName)
+            val retrievedProgress = repository.retrieveProcessDetailsByName(progressKeyId, progressName)
             Assertions.assertThat(retrievedProgress).isNull()
         }
 }

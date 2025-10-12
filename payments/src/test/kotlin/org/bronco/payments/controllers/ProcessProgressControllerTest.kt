@@ -56,15 +56,15 @@ class ProcessProgressControllerTest {
             entityId = UUID.randomUUID(),
             details = "some details"
         )
-        coEvery { repository.retrieveProcessDetails(any(), any()) } returns response
+        coEvery { repository.retrieveProcessDetailsByName(any(), any()) } returns response
 
-        webTestClient.get().uri("/processProgress/{processName}/{processId}", processName.toString(), processUuid)
+        webTestClient.get().uri("/processProgress/process/{processName}/{processId}", processName.toString(), processUuid)
             .exchange()
             .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody().json(objectWriter.writeValueAsString(response))
 
-        coVerify(exactly = 1) { repository.retrieveProcessDetails(processUuid, processName) }
+        coVerify(exactly = 1) { repository.retrieveProcessDetailsByName(processUuid, processName) }
     }
 
     @Test
@@ -78,15 +78,15 @@ class ProcessProgressControllerTest {
             ErrorTypes.RESOURCE_NOT_FOUND,
             listOf(ErrorDetail(null, null, "Process progress with id $processUuid was not found"))
         )
-        coEvery { repository.retrieveProcessDetails(any(), any()) } returns null
+        coEvery { repository.retrieveProcessDetailsByName(any(), any()) } returns null
 
-        webTestClient.get().uri("/processProgress/{processName}/{processId}", processName.toString(), processUuid)
+        webTestClient.get().uri("/processProgress/process/{processName}/{processId}", processName.toString(), processUuid)
             .exchange()
             .expectStatus().isNotFound
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody().json(objectWriter.writeValueAsString(response))
 
-        coVerify(exactly = 1) { repository.retrieveProcessDetails(processUuid, processName) }
+        coVerify(exactly = 1) { repository.retrieveProcessDetailsByName(processUuid, processName) }
     }
 
     @Test
@@ -99,13 +99,13 @@ class ProcessProgressControllerTest {
             details = listOf(ErrorDetail(value = null, field = null, message = "An improper process name was provided"))
         )
 
-        webTestClient.get().uri("/processProgress/{processName}/{processId}", processName, processUuid)
+        webTestClient.get().uri("/processProgress/process/{processName}/{processId}", processName, processUuid)
             .exchange()
             .expectStatus().isBadRequest
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody().json(objectWriter.writeValueAsString(response))
 
-        coVerify(exactly = 0) { repository.retrieveProcessDetails(any(), any()) }
+        coVerify(exactly = 0) { repository.retrieveProcessDetailsByName(any(), any()) }
     }
 
     @Test
@@ -118,12 +118,12 @@ class ProcessProgressControllerTest {
             details = listOf(ErrorDetail(value = null, field = null, message = "Invalid UUID identifier was provided"))
         )
 
-        webTestClient.get().uri("/processProgress/{processName}/{processId}", processName, processUuid)
+        webTestClient.get().uri("/processProgress/process/{processName}/{processId}", processName, processUuid)
             .exchange()
             .expectStatus().isBadRequest
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody().json(objectWriter.writeValueAsString(response))
 
-        coVerify(exactly = 0) { repository.retrieveProcessDetails(any(), any()) }
+        coVerify(exactly = 0) { repository.retrieveProcessDetailsByName(any(), any()) }
     }
 }

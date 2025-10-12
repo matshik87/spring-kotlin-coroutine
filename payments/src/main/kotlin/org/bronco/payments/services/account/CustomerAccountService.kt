@@ -23,37 +23,57 @@ class CustomerAccountService(
             setOf(AccountStatus.OPEN, AccountStatus.INACTIVE, AccountStatus.SUSPENDED, AccountStatus.BLOCKED)
     }
 
-    override suspend fun createNewAccountOrRetrieveAllExistingAccounts(customerId: UUID): List<AccountData> {
+    override suspend fun createNewAccountOrRetrieveAllExistingAccounts(
+        customerId: UUID,
+        processId: UUID
+    ): List<AccountData> {
         val accounts = accountRepository.getCustomerAccountsByStatus(customerId, notClosedAccountStatuses)
-        return if (accounts.isEmpty()) {
-            val processId = UUID.randomUUID()
+        return accounts.ifEmpty {
             val progressKey = ProgressKey(processId, ProcessName.CREATE_CUSTOMER_ACCOUNT)
             processProgressRepository.initiateProgress(progressKey, id = null)
-            val result = runCatching { accountRepository.createNewAccount(customerId) }
-            if (result.isFailure) {
-                val exception = result.exceptionOrNull()
-                logger.error("An error has occurred while creating a new account", exception)
-                processProgressRepository.updateProgress(
-                    progressKey,
-                    ProgressType.FINISHED_WITH_ERROR,
-                    null,
-                    exception?.message
+            runCatching { accountRepository.createNewAccount(customerId) }
+                .fold(
+                    onSuccess = { accountData ->
+                        finalizeAccountCreation(customerId, accountData, progressKey)
+                    },
+                    onFailure = { exception ->
+                        handleAccountCreationFailure(exception, progressKey)
+                    }
                 )
-                throw exception!!
-            } else {
-                logger.info("An account was successfully created for $customerId")
-                val newAccount = result.getOrNull()
-                processProgressRepository.updateProgress(
-                    progressKey,
-                    ProgressType.FINISHED,
-                    newAccount?.accountId,
-                    null
-                )
-                listOf(newAccount!!)
-            }
-        } else {
-            accounts
         }
+    }
+
+    private suspend fun handleAccountCreationFailure(
+        exception: Throwable,
+        progressKey: ProgressKey
+    ): List<AccountData> {
+        logger.error("An error has occurred while creating a new account", exception)
+        processProgressRepository.updateProgress(
+            progressKey,
+            ProgressType.FINISHED_WITH_ERROR,
+            null,
+            exception.message
+        )
+        throw exception
+    }
+
+    private suspend fun finalizeAccountCreation(
+        customerId: UUID,
+        newAccount: AccountData,
+        progressKey: ProgressKey
+    ): List<AccountData> {
+        logger.info("An account was successfully created for customer: $customerId")
+        processProgressRepository.updateProgress(
+            progressKey,
+            ProgressType.FINISHED,
+            newAccount.accountId,
+            null
+        )
+        return listOf(newAccount)
+    }
+
+    override suspend fun createNewAccountOrRetrieveAllExistingAccounts(customerId: UUID): List<AccountData> {
+        return createNewAccountOrRetrieveAllExistingAccounts(customerId, UUID.randomUUID())
     }
 
     override suspend fun getAccountsByCustomerId(customerId: UUID): List<AccountData> = accountRepository.getAllCustomerAccounts(customerId)

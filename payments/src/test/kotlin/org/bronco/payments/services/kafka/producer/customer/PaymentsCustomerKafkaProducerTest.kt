@@ -112,6 +112,11 @@ class PaymentsCustomerKafkaProducerTest {
             .returns(payload.secondaryPhoneNumber) { it!!.secondaryPhoneNumber }
         assertThat(result!!.customerId!!)
             .matches { customerId: UUID ->
+                await().atMost(5, TimeUnit.SECONDS).until {
+                    runBlocking {
+                        accountRepository.getAllCustomerAccounts(customerId).isNotEmpty()
+                    }
+                }
                 runBlocking {
                     assertThat(accountRepository.getCustomerAccountsByStatus(customerId, setOf(AccountStatus.INACTIVE)))
                         .singleElement()
@@ -122,7 +127,7 @@ class PaymentsCustomerKafkaProducerTest {
                 }
                 true
             }
-        assertThat(result!!.login).isNotBlank()
+        assertThat(result.login).isNotBlank()
         assertThat(result.password).isNotBlank()
         val progress = dslContext.selectFrom(PROCESS_PROGRESS).where(
             PROCESS_PROGRESS.ENTITY_ID.eq(result.customerId)

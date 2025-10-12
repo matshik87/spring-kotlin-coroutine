@@ -1,0 +1,27 @@
+customer
+- id
+- name
+- second name
+- lastname
+- date of birth
+- nationality
+- accounts
+
+account:
+- id -uuid
+- currency_code
+- balance
+- status [open, closed, suspended, awaiting-activation]
+- creation date
+- modification date
+- customer reference
+
+transaction audit log:
+- transaction_id,
+- from account_id
+- to account id
+- action type
+- transaction amount
+- transaction status
+
+product

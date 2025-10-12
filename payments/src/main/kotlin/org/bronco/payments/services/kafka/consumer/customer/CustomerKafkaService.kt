@@ -46,7 +46,7 @@ class CustomerKafkaService(
         require(processTypeKey == processName.name) { "Process type is required to be of customer creation type" }
 
         val processDetails = async {
-            progressRepository.retrieveProcessDetails(processId, processName)
+            progressRepository.retrieveProcessDetailsByName(processId, processName)
         }.await()
 
         when {

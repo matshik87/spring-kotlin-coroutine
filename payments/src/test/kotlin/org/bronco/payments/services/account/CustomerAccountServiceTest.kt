@@ -67,6 +67,41 @@ class CustomerAccountServiceTest {
     }
 
     @Test
+    fun createAccount_whenNoAccountForCustomerWithCustomProcessId_thenCreateAndReturnNewAccount() = runTest {
+        val customerId = UUID.randomUUID()
+        val accountId = UUID.randomUUID()
+        val processId = UUID.randomUUID()
+
+        coEvery { accountRepository.getCustomerAccountsByStatus(customerId, any()) } returns emptyList()
+        coEvery { accountRepository.createNewAccount(customerId) } returns accountData
+        coEvery { accountData.accountId } returns accountId
+
+        val accounts = customerAccountService.createNewAccountOrRetrieveAllExistingAccounts(customerId, processId)
+
+        assertThat(accounts).contains(accountData)
+
+        coVerify {
+            processProgressRepository.initiateProgress(coWithArg { progressKey ->
+                assertThat(progressKey).isNotNull()
+                assertThat(progressKey.name).isEqualTo(ProcessName.CREATE_CUSTOMER_ACCOUNT)
+                assertThat(progressKey.id).isEqualTo(processId)
+            }, anyNullable())
+        }
+        coVerify {
+            processProgressRepository.updateProgress(
+                coWithArg { progressKey ->
+                    assertThat(progressKey).isNotNull()
+                    assertThat(progressKey.name).isEqualTo(ProcessName.CREATE_CUSTOMER_ACCOUNT)
+                    assertThat(progressKey.id).isEqualTo(processId)
+                },
+                ProgressType.FINISHED,
+                coWithArg { accountId -> assertThat(accountId).isEqualTo(accountId) },
+                anyNullable()
+            )
+        }
+    }
+
+    @Test
     fun createAccount_whenCustomerHasAccount_thenItsReturned() = runTest {
         val customerId = UUID.randomUUID()
         val accountId = UUID.randomUUID()

@@ -82,13 +82,23 @@ open class ProcessProgressRepository(
         }
     }
 
-    override suspend fun retrieveProcessDetails(processId: UUID?, processName: ProcessName): ProcessProgressDetails? {
+    override suspend fun retrieveProcessDetailsByName(processId: UUID, processName: ProcessName): ProcessProgressDetails? {
+        return retrieveDetails(processId, processName).firstOrNull()
+    }
+
+    override suspend fun retrieveProcessDetails(processId: UUID): List<ProcessProgressDetails> {
+        return retrieveDetails(processId)
+    }
+
+    private suspend fun retrieveDetails(processId: UUID, processName: ProcessName? = null): List<ProcessProgressDetails> {
         return runInTransaction { transaction ->
-            transaction.selectFrom(PROCESS_PROGRESS)
-                .where(
-                    PROCESS_PROGRESS.PROCESS_ID.eq(processId).and(PROCESS_PROGRESS.PROCESS_NAME.eq(processName.name))
-                )
-                .fetchOneInto(ProcessProgressDetails::class.java)
+            val query = transaction.selectQuery()
+            query.addFrom(PROCESS_PROGRESS)
+            query.addConditions(PROCESS_PROGRESS.PROCESS_ID.eq(processId))
+            processName?.let{ instance ->
+                query.addConditions(PROCESS_PROGRESS.PROCESS_NAME.eq(instance.name))
+            }
+            query.fetchInto(ProcessProgressDetails::class.java)
         }
     }
 

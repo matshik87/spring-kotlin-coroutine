@@ -109,7 +109,7 @@ open class PaymentsCustomerService(
             }
             if (customerData.errorMessage.isNullOrBlank()) {
                 async {
-                    runCatching { accountService.createNewAccountOrRetrieveAllExistingAccounts(customerId) }
+                    runCatching { accountService.createNewAccountOrRetrieveAllExistingAccounts(customerId, processId) }
                         .getOrNull()?.let { accounts ->
                             customerData.toCreateCustomerResponse(accounts)
                         }
