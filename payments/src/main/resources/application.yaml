@@ -2,20 +2,18 @@ server:
   port: 8080
   http2:
     enabled: true
-  servlet:
-    context-path: /api
-spring:
+  compression:
+    enabled: true
   application:
     name: payment-service
-  datasource:
-    driver-class-name: org.postgresql.Driver
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    url: ${DB_URL}
   liquibase:
     change-log: classpath:/db/changelogs/changelog-master.xml
     liquibase-schema: ${DB_SCHEMA}
     default-schema: ${DB_SCHEMA}
+  kafka:
+    bootstrap-servers: localhost:19092
+    admin:
+      client-id: payments-client
 
 management:
   server:
@@ -33,7 +31,50 @@ management:
       enabled: true
     build:
       enabled: true
+spring:
+  webflux:
+    base-path: /api
 springdoc:
   api-docs:
     enabled: true
     path: /swagger
+  swagger-ui:
+    path: ${springdoc.api-docs.path}/ui
+
+payments:
+  data-source:
+    schema: ${DB_SCHEMA}
+    jdbc-url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    maxPoolSize: 10
+    pool-name: payments-service-pool
+    dialect: POSTGRES
+  password:
+    default: passwd-1234
+    cost: 12
+  kafka:
+    bootstrap-servers: ${BOOTSTRAP_SERVERS}
+    producers:
+      bootstrap-servers: ${payments.kafka.bootstrap-servers}
+      client-id: payments-client
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      create-customer: ${payments.kafka.consumers.topics.create-customer.topic-name}
+    consumers:
+      create-topics: false
+      containers:
+        default-container:
+          concurrency: 2
+      topics:
+        list:
+          - "${payments.kafka.consumers.topics.create-customer.topic-name}"
+        create-customer:
+          topic-name: payments.customer.create
+          concurrency: ${payments.kafka.consumers.containers.default-container.concurrency}
+          bootstrap-servers: ${payments.kafka.bootstrap-servers}
+          group-id: payments.customer-management
+          auto-offset-reset: latest
+          auto-commit: false
+          key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          value-deserializer: org.apache.kafka.common.serialization.StringDeserializer

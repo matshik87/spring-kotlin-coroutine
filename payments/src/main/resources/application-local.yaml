@@ -1,10 +1,33 @@
 spring:
-  datasource:
-    driver-class-name: org.postgresql.Driver
-    username: payments-user
-    password: payments-passwd
-    url: jdbc:postgresql://localhost:5432/payments_local
   liquibase:
     default-schema: payments_local
     change-log: classpath:db/changelogs/changelog-local.xml
-    liquibase-schema: payments_local
+    liquibase-schema: payments
+
+payments:
+  data-source:
+    schema: payments
+    jdbc-url: jdbc:postgresql://localhost:5432/payments
+    username: payments-user
+    password: payments-passwd
+    minPoolSize: 5
+    maxPoolSize: 10
+    pool-name: payments-service-pool
+    dialect: POSTGRES
+  kafka:
+    bootstrap-servers: localhost:19092
+    consumers:
+      create-topics: true
+      containers:
+        default-container:
+          concurrency: 2
+      topics:
+        create-customer:
+          topic-name: payments.customer.create
+          concurrency: ${payments.kafka.consumers.containers.default-container.concurrency}
+          bootstrap-servers: ${payments.kafka.bootstrap-servers}
+          group-id: payments.customer-management
+          auto-offset-reset: latest
+          auto-commit: false
+          key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
