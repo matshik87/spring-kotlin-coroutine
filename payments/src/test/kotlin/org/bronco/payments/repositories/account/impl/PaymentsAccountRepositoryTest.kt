@@ -123,6 +123,28 @@ open class PaymentsAccountRepositoryTest {
         assertThat(result).isEmpty()
     }
 
+    @Test
+    fun getById_whenCustomerHasAnAccount_accountIsCreated() = runTest {
+        val customer = generateCustomer(UUID.randomUUID())
+        val customerId = customer.customerId!!
+        val account = generateAccount(customerId, AccountStatus.BLOCKED, accountBalance = BigDecimal("14.23"))
+
+        val result = repository.getById(account.accountId)
+
+        assertThat(result)
+            .usingRecursiveComparison()
+            .isEqualTo(account)
+    }
+
+    @Test
+    fun getById_whenNoAccountExists_nullIsReturned() = runTest {
+        val accountId = UUID.randomUUID()
+
+        val result = repository.getById(accountId)
+
+        assertThat(result).isNull()
+    }
+
     private suspend fun generateCustomer(customerId: UUID? = null): CustomerData = coroutineScope {
         val randomizedCustomerData = generateCustomerData(customerId)
         dslContext.transactionCoroutine { transactional ->

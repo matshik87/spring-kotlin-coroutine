@@ -90,4 +90,51 @@ class AccountControllerTest {
             .expectBody().json(objectWriter.writeValueAsString(expectedResponse))
         coVerify(exactly = 0) { repository.getAllCustomerAccounts(any(UUID::class)) }
     }
+
+    @Test
+    fun retrieveAccountById_whenValidRequestAndCustomerExists_then200WithAllAccounts() = runTest {
+        val customerId = UUID.randomUUID()
+        val account = generateAccount(customerId = customerId)
+        coEvery { repository.getById(customerId) } returns account
+
+        webTestClient.get().uri("/accounts/{id}", customerId.toString())
+            .exchange()
+            .expectStatus().isOk
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody().json(objectWriter.writeValueAsString(account))
+    }
+
+    @Test
+    fun retrieveAccountById_whenValidRequestButNoAccountsPerCustomer_then404() = runTest {
+        val accountId = UUID.randomUUID()
+        coEvery { repository.getById(accountId) } returns null
+        val notFound = HttpStatus.NOT_FOUND
+        val expectedResponse = PaymentsErrorResponse(
+            code = notFound.value(), status = notFound.name, type = ErrorTypes.RESOURCE_NOT_FOUND,
+            details = listOf(ErrorDetail(value = null, field = null, message = "Customer account with id $accountId was not found"))
+        )
+
+        webTestClient.get().uri("/accounts/{id}", accountId.toString())
+            .exchange()
+            .expectStatus().isNotFound
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody().json(objectWriter.writeValueAsString(expectedResponse))
+    }
+
+    @Test
+    fun retrieveAccountById_whenInValidRequest_then400() = runTest {
+        val customerId = "invalid"
+        val badRequest = HttpStatus.BAD_REQUEST
+        val expectedResponse = PaymentsErrorResponse(
+            code = badRequest.value(), status = badRequest.name, type = ErrorTypes.VALIDATION,
+            details = listOf(ErrorDetail(value = null, field = null, message = "Invalid UUID identifier was provided"))
+        )
+
+        webTestClient.get().uri("/accounts/{id}", customerId)
+            .exchange()
+            .expectStatus().isBadRequest
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody().json(objectWriter.writeValueAsString(expectedResponse))
+        coVerify(exactly = 0) { repository.getAllCustomerAccounts(any(UUID::class)) }
+    }
 }

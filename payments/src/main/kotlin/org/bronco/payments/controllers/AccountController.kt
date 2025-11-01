@@ -26,11 +26,12 @@ import java.util.*
 
 //TODO: create account managements by the means of
 /*
- - 3. user can create an account(process uuid is returned) ---
+ - 4. user can create an account(process uuid is returned) ---
  - 2. user can retrieve an account by uuid ---
+ - 3. user can retrieve an accounts by process id
  - 1. user can retrieve all accounts by customer id --- ok
- - 5. closing an account ---
- - 4. modifying an account/s ---
+ - 6. closing an account ---
+ - 5. modifying an account/s ---
  */
 @Tag(name = "accounts", description = "Operations manages users' accounts")
 @RestController
@@ -95,6 +96,61 @@ open class AccountController(
             }
             .map { accountData -> accountData.toApiResponse() }
         ResponseEntity.ok(payload)
+    }
+
+    @Operation(
+        method = "GET",
+        tags = ["accounts"],
+        summary = """
+            Retrieval an account by id
+            """,
+        parameters = [
+            Parameter(
+                name = "id", `in` = ParameterIn.PATH, description = "customer id", required = true,
+                schema = Schema(type = "uuid")
+            ),
+        ],
+        responses = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Customer account was found",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = AccountResponse::class)
+                    )
+                ]
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "No account was found",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = PaymentsErrorResponse::class)
+                    )
+                ]
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Request is invalid. Most probably user does not exist",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = PaymentsErrorResponse::class)
+                    )
+                ]
+            )
+        ]
+    )
+    @Validated
+    @GetMapping(path = ["/{id}"])
+    suspend fun retrieveAccountById(
+        @ValidUuid @PathVariable("id") accountId: String,
+    ): ResponseEntity<AccountResponse> = coroutineScope {
+        val accountUuid = UUID.fromString(accountId)
+        val payload = repository.getById(accountUuid)?.toApiResponse()
+        ResponseEntity.ok(payload ?: throw ResourceNotFoundException(accountUuid, ResourceType.ACCOUNT))
     }
 
     /*@Operation(
