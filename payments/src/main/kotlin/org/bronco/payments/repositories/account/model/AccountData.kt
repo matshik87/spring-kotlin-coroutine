@@ -1,6 +1,7 @@
 package org.bronco.payments.repositories.account.model
 
 import jakarta.persistence.Column
+import org.bronco.payments.controllers.api.AccountResponse
 import java.math.BigDecimal
 import java.util.*
 
@@ -29,6 +30,15 @@ data class AccountDto(
 
 fun AccountData.toDto(): AccountDto = AccountDto(
     accountId = this.accountId,
+    currencyCode = this.currencyCode,
+    balance = this.balance,
+    accountName = this.accountName,
+    status = this.status,
+)
+
+fun AccountData.toApiResponse(): AccountResponse = AccountResponse(
+    accountId = this.accountId,
+    customerId = this.customerId,
     currencyCode = this.currencyCode,
     balance = this.balance,
     accountName = this.accountName,
