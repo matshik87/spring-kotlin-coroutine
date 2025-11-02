@@ -94,4 +94,16 @@ open class PaymentsAccountRepository(
                 .fetchAny { record -> record.into(AccountData::class.java) }
         }
     }
+
+    override suspend fun getByIds(ids: Collection<UUID>): List<AccountData> = coroutineScope {
+        context.transactionCoroutine { transactional ->
+            val table = table()
+            DSL.using(transactional)
+                .selectFrom(table)
+                .where(table.ID.`in`(ids))
+                .fetchAsync()
+                .await()
+                .into(AccountData::class.java)
+        }
+    }
 }

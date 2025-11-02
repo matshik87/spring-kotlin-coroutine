@@ -21,6 +21,8 @@ class CustomerAccountService(
         private val logger: Logger = LoggerFactory.getLogger(this::class.java)
         private val notClosedAccountStatuses =
             setOf(AccountStatus.OPEN, AccountStatus.INACTIVE, AccountStatus.SUSPENDED, AccountStatus.BLOCKED)
+        private val createdAccountStatuses =  setOf(ProcessName.CREATE_CUSTOMER_ACCOUNT)
+        private val successfulProcessStatusesStrings = setOf(ProgressType.FINISHED.name, ProgressType.ALREADY_PROCESSED.name)
     }
 
     override suspend fun createNewAccountOrRetrieveAllExistingAccounts(
@@ -57,6 +59,22 @@ class CustomerAccountService(
         throw exception
     }
 
+    override suspend fun createNewAccountOrRetrieveAllExistingAccounts(customerId: UUID): List<AccountData> {
+        return createNewAccountOrRetrieveAllExistingAccounts(customerId, UUID.randomUUID())
+    }
+
+    override suspend fun getAccountsByCustomerId(customerId: UUID): List<AccountData> = accountRepository.getAllCustomerAccounts(customerId)
+
+    override suspend fun getById(customerId: UUID): AccountData? = accountRepository.getById(customerId)
+
+    override suspend fun getAccountsForProcessId(processId: UUID): List<AccountData> {
+        val processes = processProgressRepository.findProcessDetailsForProcessNames(processId, createdAccountStatuses)
+        val accountIds: Set<UUID> = processes.filter { process ->
+            process.progress in successfulProcessStatusesStrings
+        }.mapNotNull { process -> process.entityId }.toSet()
+        return accountRepository.getByIds(accountIds)
+    }
+
     private suspend fun finalizeAccountCreation(
         customerId: UUID,
         newAccount: AccountData,
@@ -71,10 +89,4 @@ class CustomerAccountService(
         )
         return listOf(newAccount)
     }
-
-    override suspend fun createNewAccountOrRetrieveAllExistingAccounts(customerId: UUID): List<AccountData> {
-        return createNewAccountOrRetrieveAllExistingAccounts(customerId, UUID.randomUUID())
-    }
-
-    override suspend fun getAccountsByCustomerId(customerId: UUID): List<AccountData> = accountRepository.getAllCustomerAccounts(customerId)
 }

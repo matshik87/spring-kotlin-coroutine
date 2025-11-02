@@ -98,4 +98,30 @@ open class ProcessProgressRepositoryDataTest {
             val retrievedProgress = repository.retrieveProcessDetailsByName(progressKeyId, progressName)
             Assertions.assertThat(retrievedProgress).isNull()
         }
+
+    @Test
+    fun `findProcessDetailsForProcessNames - no matching process was found then empty response is returned`() = runTest {
+        val progressKeyId = UUID.randomUUID()
+        val progressKey = ProgressKey(progressKeyId, ProcessName.CREATE_CUSTOMER)
+        val entityId = UUID.randomUUID()
+        val progressDetails = "just starting"
+        repository.initiateProgress(progressKey, entityId, progressDetails)
+
+        val result = repository.findProcessDetailsForProcessNames(processId = progressKeyId, listOf(ProcessName.UPDATE_CUSTOMER))
+        Assertions.assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `findProcessDetailsForProcessNames - matching process was found then entity is returned`() = runTest {
+        val progressKeyId = UUID.randomUUID()
+        val processName = ProcessName.CREATE_CUSTOMER
+        val progressKey = ProgressKey(progressKeyId, processName)
+        val entityId = UUID.randomUUID()
+        val progressDetails = "just starting"
+        val expectedResponse = repository.initiateProgress(progressKey, entityId, progressDetails)
+
+        val result = repository.findProcessDetailsForProcessNames(processId = progressKeyId, listOf(processName))
+        Assertions.assertThat(result).singleElement()
+            .usingRecursiveComparison().isEqualTo(expectedResponse)
+    }
 }

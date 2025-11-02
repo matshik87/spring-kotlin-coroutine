@@ -12,4 +12,6 @@ interface AccountRepository {
     suspend fun getCustomerAccountsByStatus(customerId: UUID, statuses: Set<AccountStatus>): List<AccountData>
 
     suspend fun getAllCustomerAccounts(customerId: UUID): List<AccountData>
+
+    suspend fun getByIds(ids: Collection<UUID>): List<AccountData>
 }

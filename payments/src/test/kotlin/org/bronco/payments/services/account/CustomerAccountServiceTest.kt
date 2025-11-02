@@ -14,6 +14,7 @@ import org.bronco.payments.repositories.account.model.AccountData
 import org.bronco.payments.repositories.progress.impl.ProcessProgressRepository
 import org.bronco.payments.services.processes.model.ProcessName
 import org.bronco.payments.services.processes.model.ProgressType
+import org.bronco.payments.utils.ProcessProgressGenerators.generateProcessProgressDetails
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import java.util.*
@@ -159,5 +160,136 @@ class CustomerAccountServiceTest {
                 expectedException.message
             )
         }
+    }
+
+    @Test
+    fun getAccountsByCustomerId_whenCustomerHasAccounts_thenItsReturned() = runTest {
+        val customerId = UUID.randomUUID()
+
+        coEvery { accountRepository.getAllCustomerAccounts(customerId) } returns listOf(accountData)
+
+        val accounts = customerAccountService.getAccountsByCustomerId(customerId)
+
+        assertThat(accounts).singleElement()
+            .isEqualTo(accountData)
+    }
+
+    @Test
+    fun getAccountsByCustomerId_whenCustomerHasNoAccount_thenEmptyResponseIsReturned() = runTest {
+        val customerId = UUID.randomUUID()
+
+        coEvery { accountRepository.getAllCustomerAccounts(customerId) } returns emptyList()
+
+        val accounts = customerAccountService.getAccountsByCustomerId(customerId)
+
+        assertThat(accounts).isEmpty()
+    }
+
+    @Test
+    fun getById_whenAccountWasFound_thenItsReturned() = runTest {
+        val accountId = UUID.randomUUID()
+
+        coEvery { accountRepository.getById(accountId) } returns accountData
+
+        val accounts = customerAccountService.getById(accountId)
+
+        assertThat(accounts).isEqualTo(accountData)
+    }
+
+    @Test
+    fun getById_whenCustomerHasNoAccount_thenNullIsReturned() = runTest {
+        val accountId = UUID.randomUUID()
+
+        coEvery { accountRepository.getById(accountId) } returns null
+
+        val accounts = customerAccountService.getById(accountId)
+
+        assertThat(accounts).isNull()
+    }
+
+    @Test
+    fun getAccountsForProcessId_whenSuccessfulAccountWereFound_thenTheyAreReturned() = runTest {
+        val processId = UUID.randomUUID()
+        val accountId = UUID.randomUUID()
+
+        coEvery { processProgressRepository.findProcessDetailsForProcessNames(processId, any()) } returns listOf(
+            generateProcessProgressDetails(
+                processId,
+                ProcessName.CREATE_CUSTOMER_ACCOUNT,
+                ProgressType.ALREADY_PROCESSED,
+                accountId,
+                null
+            ),
+            generateProcessProgressDetails(
+                processId,
+                ProcessName.CREATE_CUSTOMER_ACCOUNT,
+                ProgressType.FINISHED,
+                accountId,
+                null
+            ),
+            generateProcessProgressDetails(
+                processId,
+                ProcessName.CREATE_CUSTOMER_ACCOUNT,
+                ProgressType.FINISHED_WITH_ERROR,
+                UUID.randomUUID(),
+                null
+            )
+        )
+        coEvery { accountRepository.getByIds(any()) } returns listOf(accountData)
+
+        val accounts = customerAccountService.getAccountsForProcessId(processId)
+
+        assertThat(accounts).singleElement().isEqualTo(accountData)
+        coVerify { accountRepository.getByIds(coWithArg { list ->
+            assertThat(list).singleElement().isEqualTo(accountId)
+        }) }
+    }
+
+    @Test
+    fun getAccountsForProcessId_whenNoProcessWasFound_thenEmptyListIsReturned() = runTest {
+        val processId = UUID.randomUUID()
+
+        coEvery { processProgressRepository.findProcessDetailsForProcessNames(processId, any()) } returns emptyList()
+        coEvery { accountRepository.getByIds(any()) } returns emptyList()
+
+        val accounts = customerAccountService.getAccountsForProcessId(processId)
+
+        assertThat(accounts).isEmpty()
+        coEvery { accountRepository.getByIds(emptyList()) }
+    }
+
+    @Test
+    fun getAccountsForProcessId_whenOnlyAccountsWithNotSuccessfulStatusWereFound_thenEmptyListIsReturned() = runTest {
+        val processId = UUID.randomUUID()
+
+        coEvery { processProgressRepository.findProcessDetailsForProcessNames(processId, any()) } returns listOf(
+            generateProcessProgressDetails(
+                processId,
+                ProcessName.CREATE_CUSTOMER_ACCOUNT,
+                ProgressType.IN_PROGRESS,
+                UUID.randomUUID(),
+                null
+            ),
+            generateProcessProgressDetails(
+                processId,
+                ProcessName.CREATE_CUSTOMER_ACCOUNT,
+                ProgressType.INITIALIZED,
+                UUID.randomUUID(),
+                null
+            ),
+            generateProcessProgressDetails(
+                processId,
+                ProcessName.CREATE_CUSTOMER_ACCOUNT,
+                ProgressType.FINISHED_WITH_ERROR,
+                UUID.randomUUID(),
+                null
+            )
+        )
+        coEvery { accountRepository.getByIds(any()) } returns emptyList()
+
+        val accounts = customerAccountService.getAccountsForProcessId(processId)
+
+        assertThat(accounts).isEmpty()
+        coEvery { accountRepository.getByIds(emptyList()) }
     }
 }

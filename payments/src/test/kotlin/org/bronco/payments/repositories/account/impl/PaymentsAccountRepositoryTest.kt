@@ -145,6 +145,31 @@ open class PaymentsAccountRepositoryTest {
         assertThat(result).isNull()
     }
 
+    @Test
+    fun getByIds_whenNoAccountExists_emptyListIsReturned() = runTest {
+        val accountId = UUID.randomUUID()
+
+        val result = repository.getByIds(listOf(accountId))
+
+        assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun getByIds_whenAccountsExist_allAccountsAreReturned() = runTest {
+        val customer = generateCustomer(UUID.randomUUID())
+        val customerId = customer.customerId!!
+        val expectation = listOf(
+            generateAccount(customerId, AccountStatus.BLOCKED, accountBalance = BigDecimal("14.23")),
+            generateAccount(customerId, AccountStatus.OPEN, accountBalance = BigDecimal("24.13"))
+        )
+        val accountIds = expectation.map { it.accountId }
+
+        val result = repository.getByIds(accountIds)
+
+        assertThat(result).hasSize(expectation.size)
+            .usingRecursiveComparison().isEqualTo(expectation)
+    }
+
     private suspend fun generateCustomer(customerId: UUID? = null): CustomerData = coroutineScope {
         val randomizedCustomerData = generateCustomerData(customerId)
         dslContext.transactionCoroutine { transactional ->
@@ -197,7 +222,7 @@ open class PaymentsAccountRepositoryTest {
             transaction.batchInsert(accountRecord).executeAsync()
                 .handleAsync { results, throwable ->
                     if (throwable != null || results.first() != 1) {
-                        fail<String>("Account instance is required")
+                        fail<String>("Account instance is required: ${throwable.cause?.message}")
                     }
                     accountRecord.into(AccountData::class.java)
                 }.await()

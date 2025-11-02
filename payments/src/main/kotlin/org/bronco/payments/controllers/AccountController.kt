@@ -13,8 +13,8 @@ import org.bronco.payments.controllers.api.AccountResponse
 import org.bronco.payments.controllers.api.PaymentsErrorResponse
 import org.bronco.payments.model.ResourceNotFoundException
 import org.bronco.payments.model.ResourceType
-import org.bronco.payments.repositories.account.AccountRepository
 import org.bronco.payments.repositories.account.model.toApiResponse
+import org.bronco.payments.services.account.CustomerAccountService
 import org.bronco.payments.validation.customer.ValidUuid
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -26,10 +26,10 @@ import java.util.*
 
 //TODO: create account managements by the means of
 /*
- - 4. user can create an account(process uuid is returned) ---
- - 2. user can retrieve an account by uuid ---
- - 3. user can retrieve an accounts by process id
- - 1. user can retrieve all accounts by customer id --- ok
+ - 4. user can create an account for existing customer(process uuid is returned) --- in process
+ - 2. user can retrieve an account by uuid - ok
+ - 3. user can retrieve an accounts by process id - ok
+ - 1. user can retrieve all accounts by customer id - ok
  - 6. closing an account ---
  - 5. modifying an account/s ---
  */
@@ -37,7 +37,7 @@ import java.util.*
 @RestController
 @RequestMapping(path = ["accounts"])
 open class AccountController(
-    private val repository: AccountRepository
+    private val accountService: CustomerAccountService,
 ) {
     @Operation(
         method = "GET",
@@ -90,7 +90,7 @@ open class AccountController(
         @ValidUuid @PathVariable("id") customerId: String,
     ): ResponseEntity<List<AccountResponse>> = coroutineScope {
         val customerUuid = UUID.fromString(customerId)
-        val payload = repository.getAllCustomerAccounts(customerUuid)
+        val payload = accountService.getAccountsByCustomerId(customerUuid)
             .ifEmpty {
                 throw ResourceNotFoundException(customerUuid, ResourceType.CUSTOMER_ACCOUNT)
             }
@@ -149,8 +149,57 @@ open class AccountController(
         @ValidUuid @PathVariable("id") accountId: String,
     ): ResponseEntity<AccountResponse> = coroutineScope {
         val accountUuid = UUID.fromString(accountId)
-        val payload = repository.getById(accountUuid)?.toApiResponse()
+        val payload = accountService.getById(accountUuid)?.toApiResponse()
         ResponseEntity.ok(payload ?: throw ResourceNotFoundException(accountUuid, ResourceType.ACCOUNT))
+    }
+
+    @Operation(
+        method = "GET",
+        tags = ["accounts"],
+        summary = """
+            Retrieves accounts by process progress id. It may be a parent process progress id,
+             like when creating a customer, or an actual account creation progress id.
+            """,
+        parameters = [
+            Parameter(
+                name = "id", `in` = ParameterIn.PATH, description = "process progress id", required = true,
+                schema = Schema(type = "uuid")
+            ),
+        ],
+        responses = [
+            ApiResponse(
+                responseCode = "200",
+                description = """
+                    When process and accounts were found then populated response is returned.
+                    Otherwise, an empty response is returned.
+                    """,
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = AccountResponse::class)
+                    )
+                ]
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Request is invalid. Most probably invalid uuid",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = PaymentsErrorResponse::class)
+                    )
+                ]
+            )
+        ]
+    )
+    @Validated
+    @GetMapping(path = ["/process/{id}"])
+    suspend fun retrieveAccountsByProcessId(
+        @ValidUuid @PathVariable("id") processId: String,
+    ): ResponseEntity<List<AccountResponse>> = coroutineScope {
+        val payload = accountService.getAccountsForProcessId(UUID.fromString(processId))
+            .map { it.toApiResponse() }
+        ResponseEntity.ok(payload)
     }
 
     /*@Operation(

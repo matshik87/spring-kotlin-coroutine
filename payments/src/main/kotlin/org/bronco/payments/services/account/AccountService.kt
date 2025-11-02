@@ -9,4 +9,8 @@ interface AccountService {
     suspend fun createNewAccountOrRetrieveAllExistingAccounts(customerId: UUID, processId: UUID): List<AccountData>
 
     suspend fun getAccountsByCustomerId(customerId: UUID): List<AccountData>
+
+    suspend fun getById(customerId: UUID): AccountData?
+
+    suspend fun getAccountsForProcessId(processId: UUID): List<AccountData>
 }

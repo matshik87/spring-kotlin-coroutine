@@ -10,4 +10,5 @@ interface ProgressRepository {
     suspend fun updateProgress(key: ProgressKey, progress: ProgressType, id: UUID?, progressDetails: String?)
     suspend fun retrieveProcessDetailsByName(processId: UUID, processName: ProcessName): ProcessProgressDetails?
     suspend fun retrieveProcessDetails(processId: UUID): List<ProcessProgressDetails>
+    suspend fun findProcessDetailsForProcessNames(processId: UUID, processNames: Collection<ProcessName>): List<ProcessProgressDetails>
 }

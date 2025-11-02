@@ -9,6 +9,8 @@ import org.bronco.payments.services.processes.model.ProcessName
 import org.bronco.payments.services.processes.model.ProcessProgressDetails
 import org.bronco.payments.services.processes.model.ProgressType
 import org.jooq.DSLContext
+import org.jooq.Record
+import org.jooq.SelectQuery
 import org.jooq.impl.DSL
 import org.jooq.kotlin.coroutines.transactionCoroutine
 import org.slf4j.Logger
@@ -82,7 +84,10 @@ open class ProcessProgressRepository(
         }
     }
 
-    override suspend fun retrieveProcessDetailsByName(processId: UUID, processName: ProcessName): ProcessProgressDetails? {
+    override suspend fun retrieveProcessDetailsByName(
+        processId: UUID,
+        processName: ProcessName
+    ): ProcessProgressDetails? {
         return retrieveDetails(processId, processName).firstOrNull()
     }
 
@@ -90,16 +95,38 @@ open class ProcessProgressRepository(
         return retrieveDetails(processId)
     }
 
-    private suspend fun retrieveDetails(processId: UUID, processName: ProcessName? = null): List<ProcessProgressDetails> {
+    override suspend fun findProcessDetailsForProcessNames(
+        processId: UUID,
+        processNames: Collection<ProcessName>
+    ): List<ProcessProgressDetails> {
         return runInTransaction { transaction ->
-            val query = transaction.selectQuery()
-            query.addFrom(PROCESS_PROGRESS)
+            val query = selectQuery(transaction)
+            query.addConditions(
+                PROCESS_PROGRESS.PROCESS_ID.eq(processId)
+                    .and(PROCESS_PROGRESS.PROCESS_NAME.`in`(processNames.map { it.name }))
+            )
+            query.fetchInto(ProcessProgressDetails::class.java)
+        }
+    }
+
+    private suspend fun retrieveDetails(
+        processId: UUID,
+        processName: ProcessName? = null
+    ): List<ProcessProgressDetails> {
+        return runInTransaction { transaction ->
+            val query = selectQuery(transaction)
             query.addConditions(PROCESS_PROGRESS.PROCESS_ID.eq(processId))
-            processName?.let{ instance ->
+            processName?.let { instance ->
                 query.addConditions(PROCESS_PROGRESS.PROCESS_NAME.eq(instance.name))
             }
             query.fetchInto(ProcessProgressDetails::class.java)
         }
+    }
+
+    private fun selectQuery(transaction: DSLContext): SelectQuery<Record> {
+        val selectQueryRoot = transaction.selectQuery()
+        selectQueryRoot.addFrom(PROCESS_PROGRESS)
+        return selectQueryRoot
     }
 
     private suspend fun <T> runInTransaction(action: suspend (DSLContext) -> T): T {

@@ -111,7 +111,7 @@ collection:
         meta:
           id: req_b96bb4eec316490ba64cf37ddde160e0
           created: 1746972713045
-          modified: 1760278715027
+          modified: 1761993902750
           isPrivate: false
           description: ""
           sortKey: -1746972830072
@@ -130,7 +130,7 @@ collection:
           rebuildPath: true
         pathParameters:
           - name: customerId
-            value: 55dce05a-f50c-4d97-b4b3-66effb8d338e
+            value: e370b88f-7731-4d16-b16d-d5f842f1944e
       - url: "{{ _['payment-url'] }}/api/customers"
         name: create customer
         meta:
@@ -182,7 +182,7 @@ collection:
         meta:
           id: req_a628043ba52a4ad1858abddef1e0c3e5
           created: 1754208903608
-          modified: 1754213847461
+          modified: 1761994354386
           isPrivate: false
           description: ""
           sortKey: -1746972830072
@@ -258,6 +258,86 @@ collection:
         pathParameters:
           - name: processId
             value: 9adf8b53-e5f8-4342-80fa-035ae2a69564
+  - name: Account management
+    meta:
+      id: fld_e3c6d56dba53438082e8d4bfd4c3a03d
+      created: 1761993926378
+      modified: 1761993926378
+      sortKey: -1761993926378
+      description: ""
+    children:
+      - url: "{{ _['payment-url'] }}/api/accounts/customer/:id"
+        name: get by customer id
+        meta:
+          id: req_ea8bf0f451d548b6b5de29165c1de709
+          created: 1761993930470
+          modified: 1761996628648
+          isPrivate: false
+          description: ""
+          sortKey: -1761993930470
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/11.6.2
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+        pathParameters:
+          - name: id
+            value: e370b88f-7731-4d16-b16d-d5f842f1944e
+      - url: "{{ _['payment-url'] }}/api/accounts/:id"
+        name: get by account id
+        meta:
+          id: req_bc319c1ad82d4b1ab436821897ed9432
+          created: 1761996610712
+          modified: 1761996646041
+          isPrivate: false
+          description: ""
+          sortKey: -1761095012036.5
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/11.6.2
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+        pathParameters:
+          - name: id
+            value: 0c4ab10a-34d6-468e-ae9a-73da1ee9be72
+      - url: "{{ _['payment-url'] }}/api/accounts/process/:id"
+        name: get by process id
+        meta:
+          id: req_6e1bb0a6b6e941dca8f41f546725d10d
+          created: 1762078037961
+          modified: 1762078130314
+          isPrivate: false
+          description: ""
+          sortKey: -1760645552819.75
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/11.6.2
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+        pathParameters:
+          - name: id
+            value: 7ef53b3d-6f72-474b-9ab4-9cb78edc9849
 cookieJar:
   name: Default Jar
   meta:
