@@ -26,7 +26,7 @@ val PK_CUSTOMER_ID: UniqueKey<CustomerRecord> = Internal.createUniqueKey(Custome
 val UQ_CUSTOMER_EMAIL: UniqueKey<CustomerRecord> = Internal.createUniqueKey(Customer.CUSTOMER, DSL.name("uq_customer_email"), arrayOf(Customer.CUSTOMER.EMAIL), true)
 val UQ_CUSTOMER_LOGIN: UniqueKey<CustomerRecord> = Internal.createUniqueKey(Customer.CUSTOMER, DSL.name("uq_customer_login"), arrayOf(Customer.CUSTOMER.LOGIN), true)
 val UQ_CUSTOMER_PHONE_NUMBER: UniqueKey<CustomerRecord> = Internal.createUniqueKey(Customer.CUSTOMER, DSL.name("uq_customer_phone_number"), arrayOf(Customer.CUSTOMER.PHONE_NUMBER), true)
-val PK_PROCESS_PROGRESS_KEY: UniqueKey<ProcessProgressRecord> = Internal.createUniqueKey(ProcessProgress.PROCESS_PROGRESS, DSL.name("pk_process_progress_key"), arrayOf(ProcessProgress.PROCESS_PROGRESS.PROCESS_ID, ProcessProgress.PROCESS_PROGRESS.PROCESS_NAME), true)
+val PK_PROCESS_PROGRESS_KEY: UniqueKey<ProcessProgressRecord> = Internal.createUniqueKey(ProcessProgress.PROCESS_PROGRESS, DSL.name("pk_process_progress_key"), arrayOf(ProcessProgress.PROCESS_PROGRESS.PROCESS_ID, ProcessProgress.PROCESS_PROGRESS.PROCESS_TYPE), true)
 
 // -------------------------------------------------------------------------
 // FOREIGN KEY definitions

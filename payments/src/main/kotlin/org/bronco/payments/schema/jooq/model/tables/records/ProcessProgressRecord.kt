@@ -22,7 +22,7 @@ open class ProcessProgressRecord() : UpdatableRecordImpl<ProcessProgressRecord>(
         set(value): Unit = set(0, value)
         get(): UUID? = get(0) as UUID?
 
-    open var processName: String?
+    open var processType: String?
         set(value): Unit = set(1, value)
         get(): String? = get(1) as String?
 
@@ -46,6 +46,10 @@ open class ProcessProgressRecord() : UpdatableRecordImpl<ProcessProgressRecord>(
         set(value): Unit = set(6, value)
         get(): LocalDateTime? = get(6) as LocalDateTime?
 
+    open var processParentId: UUID?
+        set(value): Unit = set(7, value)
+        get(): UUID? = get(7) as UUID?
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -55,14 +59,15 @@ open class ProcessProgressRecord() : UpdatableRecordImpl<ProcessProgressRecord>(
     /**
      * Create a detached, initialised ProcessProgressRecord
      */
-    constructor(processId: UUID? = null, processName: String? = null, progress: String? = null, entityId: UUID? = null, details: String? = null, creationDate: LocalDateTime? = null, modificationDate: LocalDateTime? = null): this() {
+    constructor(processId: UUID? = null, processType: String? = null, progress: String? = null, entityId: UUID? = null, details: String? = null, creationDate: LocalDateTime? = null, modificationDate: LocalDateTime? = null, processParentId: UUID? = null): this() {
         this.processId = processId
-        this.processName = processName
+        this.processType = processType
         this.progress = progress
         this.entityId = entityId
         this.details = details
         this.creationDate = creationDate
         this.modificationDate = modificationDate
+        this.processParentId = processParentId
         resetChangedOnNotNull()
     }
 }
