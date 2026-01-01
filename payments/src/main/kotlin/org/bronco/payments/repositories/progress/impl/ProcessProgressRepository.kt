@@ -2,13 +2,11 @@ package org.bronco.payments.repositories.progress.impl
 
 import kotlinx.coroutines.future.await
 import org.bronco.payments.repositories.progress.ProcessProgressProperties
-import org.bronco.payments.repositories.progress.ProgressKey
 import org.bronco.payments.repositories.progress.ProgressRepository
 import org.bronco.payments.schema.jooq.model.tables.records.ProcessProgressRecord
 import org.bronco.payments.schema.jooq.model.tables.references.PROCESS_PROGRESS
 import org.bronco.payments.services.processes.model.ProcessProgressDetails
 import org.bronco.payments.services.processes.model.ProcessType
-import org.bronco.payments.services.processes.model.ProgressType
 import org.jooq.DSLContext
 import org.jooq.Record
 import org.jooq.SelectQuery
@@ -20,7 +18,6 @@ import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 import java.util.*
 
-//TODO: replace previous versions of methods in the code, add test for retrieveProcessDetails
 @Repository
 open class ProcessProgressRepository(
     private val dslContext: DSLContext
@@ -52,30 +49,6 @@ open class ProcessProgressRepository(
                     } else {
                         logger.info("Adding progress for [${key}, id: ${properties.entityId}] with ${properties.progressType} has completed: ${results.first() > 0}.")
                         record.toProgressDetails()
-                    }
-                }.await()
-        }
-    }
-
-    override suspend fun updateProgress(
-        key: ProgressKey,
-        progress: ProgressType,
-        id: UUID?,
-        progressDetails: String?
-    ) {
-        runInTransaction<Unit> { transaction ->
-            val record =
-                prepareRecord(key, progress, id, details = progressDetails, modificationTime = LocalDateTime.now())
-
-            transaction.batchUpdate(record(transaction)).executeAsync()
-                .handleAsync { results, throwable ->
-                    if (throwable != null) {
-                        logger.error(
-                            "Updating progress into ${progress} for [${key}, id: ${id}] has failed.",
-                            throwable
-                        )
-                    } else {
-                        logger.info("Updating progress for [${key}, id: ${id}] with $progress has completed: ${results.first() > 0}.")
                     }
                 }.await()
         }
@@ -114,30 +87,20 @@ open class ProcessProgressRepository(
         return retrieveDetails(processId)
     }
 
-    override suspend fun findProcessDetailsForProcessNames(
-        processId: UUID,
-        processTypes: Collection<ProcessType>
+    override suspend fun findProcessDetailsForProcessNamesByIds(
+        processTypes: Collection<ProcessType>,
+        processId: UUID?,
+        parentProcessId: UUID?
     ): List<ProcessProgressDetails> {
+        require(processId != null || parentProcessId != null) { "any of main or parent process id is required" }
         return runInTransaction { transaction ->
             val query = selectQuery(transaction)
-            query.addConditions(
-                PROCESS_PROGRESS.PROCESS_ID.eq(processId)
-                    .and(PROCESS_PROGRESS.PROCESS_TYPE.`in`(processTypes.map { it.name }))
-            )
-            query.fetchInto(ProcessProgressDetails::class.java)
-        }
-    }
 
-    override suspend fun findProcessDetailsForProcessNamesBuParentId(
-        parentProcessId: UUID,
-        processTypes: Collection<ProcessType>
-    ): List<ProcessProgressDetails> {
-        return runInTransaction { transaction ->
-            val query = selectQuery(transaction)
             query.addConditions(
-                PROCESS_PROGRESS.PROCESS_PARENT_ID.eq(parentProcessId)
-                    .and(PROCESS_PROGRESS.PROCESS_TYPE.`in`(processTypes.map { it.name }))
+                PROCESS_PROGRESS.PROCESS_TYPE.`in`(processTypes.map { it.name })
             )
+            processId?.let { query.addConditions(PROCESS_PROGRESS.PROCESS_ID.eq(it)) }
+            parentProcessId?.let { query.addConditions(PROCESS_PROGRESS.PROCESS_PARENT_ID.eq(it)) }
             query.fetchInto(ProcessProgressDetails::class.java)
         }
     }
@@ -169,29 +132,6 @@ open class ProcessProgressRepository(
     private suspend fun <T> runInTransaction(action: suspend (DSLContext) -> T): T {
         return dslContext.transactionCoroutine { transactional ->
             action(DSL.using(transactional))
-        }
-    }
-
-    private fun prepareRecord(
-        key: ProgressKey,
-        newProgress: ProgressType,
-        id: UUID?,
-        details: String? = null,
-        creationDate: LocalDateTime? = null,
-        modificationTime: LocalDateTime = LocalDateTime.now()
-    ): (DSLContext) -> ProcessProgressRecord = { context ->
-        context.newRecord(PROCESS_PROGRESS).apply {
-            processId = key.id
-            processType = key.name.name
-            progress = newProgress.toString()
-            entityId = id
-            if (!details.isNullOrBlank()) {
-                this.details = details
-            }
-            if (creationDate != null) {
-                this.creationDate = creationDate
-            }
-            modificationDate = modificationTime
         }
     }
 

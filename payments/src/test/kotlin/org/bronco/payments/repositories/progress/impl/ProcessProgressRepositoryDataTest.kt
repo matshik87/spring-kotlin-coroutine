@@ -1,5 +1,6 @@
 package org.bronco.payments.repositories.progress.impl
 
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions
 import org.bronco.payments.repositories.progress.ProcessProgressProperties
@@ -137,9 +138,9 @@ open class ProcessProgressRepositoryDataTest {
         runTest {
             val progressKeyId = UUID.randomUUID()
 
-            val result = repository.findProcessDetailsForProcessNames(
-                processId = progressKeyId,
-                listOf(ProcessType.UPDATE_CUSTOMER)
+            val result = repository.findProcessDetailsForProcessNamesByIds(
+                listOf(ProcessType.UPDATE_CUSTOMER),
+                processId = progressKeyId
             )
             Assertions.assertThat(result).isEmpty()
         }
@@ -155,23 +156,23 @@ open class ProcessProgressRepositoryDataTest {
         )
         val expectedResponse = repository.initiateProgress(processProperties)
 
-        val result = repository.findProcessDetailsForProcessNames(processId = progressKeyId, listOf(processType))
+        val result = repository.findProcessDetailsForProcessNamesByIds(listOf(processType), processId = progressKeyId)
         Assertions.assertThat(result).singleElement()
             .usingRecursiveComparison().isEqualTo(expectedResponse)
     }
 
     @Test
-    fun `findProcessDetailsForProcessNamesBuParentId - no matching process was found then empty response is returned`() =
+    fun `findProcessDetailsForProcessNamesByIds - no matching process was found then empty response is returned`() =
         runTest {
-            val result = repository.findProcessDetailsForProcessNamesBuParentId(
-                parentProcessId = UUID.randomUUID(),
-                listOf(ProcessType.UPDATE_CUSTOMER)
+            val result = repository.findProcessDetailsForProcessNamesByIds(
+                listOf(ProcessType.UPDATE_CUSTOMER),
+                parentProcessId = UUID.randomUUID()
             )
             Assertions.assertThat(result).isEmpty()
         }
 
     @Test
-    fun `findProcessDetailsForProcessNamesBuParentId - matching process was found then entity is returned`() = runTest {
+    fun `findProcessDetailsForProcessNamesByIds - matching process was found then entity is returned`() = runTest {
         val processId = UUID.randomUUID()
         val parentProcessId = UUID.randomUUID()
         val progressDetails = "just starting"
@@ -180,11 +181,23 @@ open class ProcessProgressRepositoryDataTest {
             .copy(progressDetails = progressDetails)
         val expectedResponse = repository.initiateProgress(properties)
 
-        val result = repository.findProcessDetailsForProcessNamesBuParentId(
-            parentProcessId = parentProcessId,
-            listOf(processType)
+        val result = repository.findProcessDetailsForProcessNamesByIds(
+            listOf(processType),
+            parentProcessId = parentProcessId
         )
         Assertions.assertThat(result).singleElement()
             .usingRecursiveComparison().isEqualTo(expectedResponse)
+    }
+
+    @Test
+    fun `findProcessDetailsForProcessNamesByIds - for no id passed, an exception is thrown`() = runTest {
+        Assertions.assertThatThrownBy {
+            runBlocking {
+                repository.findProcessDetailsForProcessNamesByIds(
+                    listOf(ProcessType.CREATE_CUSTOMER)
+                )
+            }
+        }.isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessage("any of main or parent process id is required")
     }
 }
