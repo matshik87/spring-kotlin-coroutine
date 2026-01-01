@@ -11,62 +11,52 @@ import org.springframework.stereotype.Component
 @ConfigurationProperties(prefix = "payments.kafka")
 class BroncoKafkaProperties(
     var bootstrapServers: String = "",
-    var consumers: KafkaConsumerProperties = KafkaConsumerProperties(),
-    var producers: KafkaProducerProperties = KafkaProducerProperties()
+    var consumers: KafkaComponentProperties = KafkaComponentProperties(),
+    var producers: KafkaComponentProperties = KafkaComponentProperties()
 ) {
 }
 
-class KafkaConsumerProperties(
-    var createTopics: Boolean = false,
-    var containers: KafkaContainers = KafkaContainers(),
-    var topics: KafkaTopicsProperties = KafkaTopicsProperties(),
-) {}
-
-class KafkaProducerProperties(
-    var bootstrapServers: String = "",
-    var createCustomer: String = "",
-    var clientId: String = "",
-    var keySerializer: String = "",
-    var valueSerializer: String = ""
+class KafkaComponentProperties(
+    var topics: List<KafkaTopicProperties> = emptyList(),
 ) {
-    fun producerConfig(): Map<String, Any> = mapOf<String, Any>(
-        ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
-        ProducerConfig.CLIENT_ID_CONFIG to clientId,
-        ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to keySerializer,
-        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to valueSerializer,
-    )
-}
-
-class KafkaContainers {
-    var defaultContainer: KafkaContainerDetails = KafkaContainerDetails()
-}
-
-class KafkaContainerDetails(
-    var concurrency: Int = 1,
-) {}
-
-class KafkaTopicsProperties {
-    var list: List<String> = emptyList()
-    var createCustomer: KafkaTopicProperties = KafkaTopicProperties()
+    fun findTopic(topicName: String): KafkaTopicProperties = topics.find { it.name == topicName }
+        ?: throw IllegalArgumentException("Missing $topicName topic configuration. Could not proceed.")
 }
 
 class KafkaTopicProperties(
+    var name: String = "",
     var topicName: String = "",
     var concurrency: Int = 0,
     var bootstrapServers: String = "",
     var groupId: String = "",
+    var clientId: String = "",
     var autoOffsetReset: String = "latest",
     var autoCommit: Boolean = true,
-    var keyDeserializer: String = "",
-    var valueDeserializer: String = ""
+    var serialization: SerializationConfig = SerializationConfig(),
+    var deserialization: DeserializationConfig = DeserializationConfig(),
 ) {
     fun consumerConfig(): Map<String, Any> = mapOf<String, Any>(
         ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
         ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to autoOffsetReset,
         ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to autoCommit,
-        ConsumerConfig.GROUP_ID_CONFIG to groupId,
-        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to keyDeserializer,
-        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to valueDeserializer,
+        ConsumerConfig.GROUP_ID_CONFIG to groupId.ifBlank { "$topicName-groupId" },
+        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to deserialization.key,
+        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to deserialization.value,
+    )
+    fun producerConfig(): Map<String, Any> = mapOf<String, Any>(
+        ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+        ProducerConfig.CLIENT_ID_CONFIG to clientId.ifBlank { "$topicName-client" },
+        ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to serialization.key,
+        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to serialization.value,
     )
 }
 
+class SerializationConfig(
+    var key: String = "",
+    var value: String = ""
+)
+
+class DeserializationConfig(
+    var key: String = "",
+    var value: String = ""
+)

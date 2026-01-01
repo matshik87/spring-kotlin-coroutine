@@ -41,6 +41,41 @@ springdoc:
   swagger-ui:
     path: ${springdoc.api-docs.path}/ui
 
+kafka:
+  default-serialization: &defaultSerialization
+    key: org.apache.kafka.common.serialization.StringSerializer
+    value: org.apache.kafka.common.serialization.StringSerializer
+  default-deserialization: &defaultDeserialization
+    key: org.apache.kafka.common.serialization.StringDeserializer
+    value: org.apache.kafka.common.serialization.StringDeserializer
+  topics:
+    create-customer: &createCustomerTopic
+      name: createCustomer
+      bootstrap-servers: ${payments.kafka.bootstrap-servers}
+      topic-name: payments.customer.create
+      concurrency: ${payments.kafka.consumers.containers.default-container.concurrency}
+      group-id: payments.customer-management
+      client-id: payments.customer-management-client
+      auto-offset-reset: latest
+      auto-commit: false
+      serialization:
+        <<: *defaultSerialization
+      deserialization:
+        <<: *defaultDeserialization
+    create-customer-account: &createCustomerAccount
+      name: createCustomerAccount
+      bootstrap-servers: ${payments.kafka.bootstrap-servers}
+      topic-name: payments.account.create
+      concurrency: ${payments.kafka.consumers.containers.default-container.concurrency}
+      group-id: payments.customer-account-management
+      client-id: payments.customer-account-management-client
+      auto-offset-reset: latest
+      auto-commit: false
+      serialization:
+        <<: *defaultSerialization
+      deserialization:
+        <<: *defaultDeserialization
+
 payments:
   data-source:
     schema: ${DB_SCHEMA}
@@ -54,27 +89,30 @@ payments:
     default: passwd-1234
     cost: 12
   kafka:
+    defaults:
+      default-key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      default-value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      default-key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      default-value-serializer: org.apache.kafka.common.serialization.StringSerializer
     bootstrap-servers: ${BOOTSTRAP_SERVERS}
     producers:
       bootstrap-servers: ${payments.kafka.bootstrap-servers}
       client-id: payments-client
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      create-customer: ${payments.kafka.consumers.topics.create-customer.topic-name}
+
+      topics:
+        -
+          <<: *createCustomerTopic
+        -
+          <<: *createCustomerAccount
     consumers:
-      create-topics: false
+      create-topics: true
       containers:
         default-container:
           concurrency: 2
       topics:
-        list:
-          - "${payments.kafka.consumers.topics.create-customer.topic-name}"
-        create-customer:
-          topic-name: payments.customer.create
-          concurrency: ${payments.kafka.consumers.containers.default-container.concurrency}
-          bootstrap-servers: ${payments.kafka.bootstrap-servers}
-          group-id: payments.customer-management
-          auto-offset-reset: latest
-          auto-commit: false
-          key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-          value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        -
+          <<: *createCustomerTopic
+        -
+          <<: *createCustomerAccount
