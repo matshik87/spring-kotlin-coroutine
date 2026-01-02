@@ -11,32 +11,33 @@ kafka:
   default-deserialization: &defaultDeserialization
     key: org.apache.kafka.common.serialization.StringDeserializer
     value: org.apache.kafka.common.serialization.StringDeserializer
-  create-customer: &createCustomerTopic
-    name: createCustomer
-    bootstrap-servers: ${payments.kafka.bootstrap-servers}
-    topic-name: payments.customer.create
-    concurrency: ${payments.kafka.consumers.containers.default-container.concurrency}
-    group-id: payments.customer-management
-    client-id: payments.customer-management-client
-    auto-offset-reset: latest
-    auto-commit: false
-    serialization:
-      <<: *defaultSerialization
-    deserialization:
-      <<: *defaultDeserialization
-  create-customer-account: &createCustomerAccount
-    name: createCustomerAccount
-    bootstrap-servers: ${payments.kafka.bootstrap-servers}
-    topic-name: payments.account.create
-    concurrency: ${payments.kafka.consumers.containers.default-container.concurrency}
-    group-id: payments.customer-account-management
-    client-id: payments.customer-account-management-client
-    auto-offset-reset: latest
-    auto-commit: false
-    serialization:
-      <<: *defaultSerialization
-    deserialization:
-      <<: *defaultDeserialization
+  topics:
+    create-customer: &createCustomerTopic
+      name: createCustomer
+      bootstrap-servers: ${payments.kafka.bootstrap-servers}
+      topic-name: payments.customer.create
+      concurrency: ${payments.kafka.consumers.containers.default-container.concurrency}
+      group-id: payments.customer-management
+      client-id: payments.customer-management-client
+      auto-offset-reset: latest
+      auto-commit: false
+      serialization:
+        <<: *defaultSerialization
+      deserialization:
+        <<: *defaultDeserialization
+    create-customer-account: &createCustomerAccount
+      name: createCustomerAccount
+      bootstrap-servers: ${payments.kafka.bootstrap-servers}
+      topic-name: payments.account.create
+      concurrency: ${payments.kafka.consumers.containers.default-container.concurrency}
+      group-id: payments.customer-account-management
+      client-id: payments.customer-account-management-client
+      auto-offset-reset: latest
+      auto-commit: false
+      serialization:
+        <<: *defaultSerialization
+      deserialization:
+        <<: *defaultDeserialization
 
 payments:
   data-source:

@@ -30,8 +30,8 @@ class CustomerKafkaService(
     }
 
     @KafkaListener(
-        topics = ["\${payments.kafka.consumers.topics.create-customer.topic-name}"],
-        groupId = "\${payments.kafka.consumers.topics.create-customer.group-id}",
+        topics = ["\${kafka.topics.create-customer.topic-name}"],
+        groupId = "\${kafka.topics.create-customer.group-id}",
         containerFactory = "customerListenerContainer",
     )
     suspend fun processCreateCustomerMessage(
