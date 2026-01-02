@@ -8,6 +8,7 @@ import org.apache.kafka.clients.admin.AdminClient
 import org.apache.kafka.clients.admin.NewTopic
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility.await
+import org.bronco.payments.config.KafkaConfiguration.Companion.createCustomerTopic
 import org.bronco.payments.config.KafkaTestConfig
 import org.bronco.payments.config.properties.BroncoKafkaProperties
 import org.bronco.payments.model.Currencies
@@ -18,8 +19,8 @@ import org.bronco.payments.repositories.progress.ProgressRepository
 import org.bronco.payments.schema.jooq.model.tables.references.ACCOUNT
 import org.bronco.payments.schema.jooq.model.tables.references.CUSTOMER
 import org.bronco.payments.schema.jooq.model.tables.references.PROCESS_PROGRESS
-import org.bronco.payments.services.processes.model.ProcessName
 import org.bronco.payments.services.processes.model.ProcessProgressDetails
+import org.bronco.payments.services.processes.model.ProcessType
 import org.bronco.payments.services.processes.model.ProgressType
 import org.bronco.payments.utils.CustomerDataGenerators.generateCreateCustomerRequest
 import org.bronco.payments.utils.TemporalUtils.LOCAL_DATE_FORMATTER
@@ -38,7 +39,7 @@ import java.util.concurrent.TimeUnit
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Import(BroncoKafkaProperties::class, KafkaTestConfig::class)
-class PaymentsCustomerKafkaProducerTest {
+class CustomerAccountKafkaProducerTest {
     companion object {
         private val email = "email@test.com"
     }
@@ -50,7 +51,7 @@ class PaymentsCustomerKafkaProducerTest {
     private lateinit var progressRepository: ProgressRepository
 
     @Autowired
-    private lateinit var kafkaTemplate: KafkaTemplate<String, String>
+    private lateinit var createCustomerKafkaTemplate: KafkaTemplate<String, String>
 
     @Autowired
     private lateinit var objectWriter: ObjectWriter
@@ -72,7 +73,7 @@ class PaymentsCustomerKafkaProducerTest {
 
     @BeforeEach
     fun setUp() {
-        val createCustomer = kafkaProperties.consumers.topics.createCustomer
+        val createCustomer = kafkaProperties.consumers.findTopic(createCustomerTopic)
         adminClient.deleteTopics(listOf(createCustomer.topicName))
         adminClient.createTopics(listOf(NewTopic(createCustomer.topicName, 1, 1)))
         dslContext.deleteFrom(PROCESS_PROGRESS)
@@ -131,7 +132,7 @@ class PaymentsCustomerKafkaProducerTest {
         assertThat(result.password).isNotBlank()
         val progress = dslContext.selectFrom(PROCESS_PROGRESS).where(
             PROCESS_PROGRESS.ENTITY_ID.eq(result.customerId)
-                .and(PROCESS_PROGRESS.PROCESS_NAME.eq(ProcessName.CREATE_CUSTOMER.name))
+                .and(PROCESS_PROGRESS.PROCESS_TYPE.eq(ProcessType.CREATE_CUSTOMER.name))
                 .and(PROCESS_PROGRESS.PROGRESS.eq(ProgressType.FINISHED.name))
         ).fetchInto(ProcessProgressDetails::class.java)
         assertThat(progress).singleElement()
@@ -146,27 +147,27 @@ class PaymentsCustomerKafkaProducerTest {
 
         await().atMost(1, TimeUnit.SECONDS).until {
             runBlocking {
-                customerRepository.findByLoginAndEmail(null, payload.email) == null
-                        && dslContext.fetchExists(
-                    dslContext.selectFrom(PROCESS_PROGRESS)
-                        .where(
-                            PROCESS_PROGRESS.PROGRESS.eq(ProgressType.FINISHED_WITH_ERROR.name).and(
-                                PROCESS_PROGRESS.PROCESS_NAME.eq(ProcessName.CREATE_CUSTOMER.name)
-                            ).and(
-                                PROCESS_PROGRESS.ENTITY_ID.isNotNull
-                            ).and(PROCESS_PROGRESS.ENTITY_ID.isNotNull)
-                        )
-                )
+                dslContext.fetchExists(
+                dslContext.selectFrom(PROCESS_PROGRESS)
+                    .where(
+                        PROCESS_PROGRESS.PROGRESS.eq(ProgressType.FINISHED_WITH_ERROR.name).and(
+                            PROCESS_PROGRESS.PROCESS_TYPE.eq(ProcessType.CREATE_CUSTOMER.name)
+                        ).and(
+                            PROCESS_PROGRESS.ENTITY_ID.isNull
+                        ).and(PROCESS_PROGRESS.PROCESS_PARENT_ID.isNotNull)
+                    )
+            )
             }
         }
 
         val processProgress = dslContext.selectFrom(PROCESS_PROGRESS)
             .where(
                 PROCESS_PROGRESS.PROGRESS.eq(ProgressType.FINISHED_WITH_ERROR.name).and(
-                    PROCESS_PROGRESS.PROCESS_NAME.eq(ProcessName.CREATE_CUSTOMER.name)
+                    PROCESS_PROGRESS.PROCESS_TYPE.eq(ProcessType.CREATE_CUSTOMER.name)
                 ).and(
-                    PROCESS_PROGRESS.ENTITY_ID.isNotNull
-                ).and(PROCESS_PROGRESS.ENTITY_ID.isNotNull)
+                    PROCESS_PROGRESS.PROCESS_ID.isNotNull
+                ).and(PROCESS_PROGRESS.PROCESS_PARENT_ID.isNotNull)
+                    .and(PROCESS_PROGRESS.ENTITY_ID.isNull)
             ).fetchInto(ProcessProgressDetails::class.java)
 
         assertThat(processProgress).singleElement()
