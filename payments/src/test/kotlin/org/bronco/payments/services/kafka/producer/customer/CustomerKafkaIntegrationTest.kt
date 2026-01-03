@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Import(BroncoKafkaProperties::class, KafkaTestConfig::class)
-class CustomerAccountKafkaProducerTest {
+class CustomerKafkaIntegrationTest {
     companion object {
         private val email = "email@test.com"
     }
@@ -93,7 +93,6 @@ class CustomerAccountKafkaProducerTest {
         val payload = generateCreateCustomerRequest(email)
 
         kafkaProducer.dispatchCreateCustomer(payload)
-        customerRepository.findByLoginAndEmail(null, payload.email)
         await().atMost(5, TimeUnit.SECONDS).until {
             runBlocking {
                 customerRepository.findByLoginAndEmail(null, payload.email) != null

@@ -1,9 +1,6 @@
 package org.bronco.payments.services.customer
 
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import org.bronco.payments.controllers.api.CreateCustomerRequest
 import org.bronco.payments.controllers.api.CreateCustomerResponse
 import org.bronco.payments.controllers.api.RetrieveCustomerResponse
@@ -13,12 +10,12 @@ import org.bronco.payments.repositories.account.model.AccountData
 import org.bronco.payments.repositories.account.model.toDto
 import org.bronco.payments.repositories.customer.CustomerData
 import org.bronco.payments.repositories.customer.CustomerRepository
-import org.bronco.payments.repositories.progress.ProgressKey
+import org.bronco.payments.repositories.progress.ProcessProgressProperties
 import org.bronco.payments.repositories.progress.ProgressRepository
 import org.bronco.payments.services.account.AccountService
 import org.bronco.payments.services.login.PaymentsLoginService
 import org.bronco.payments.services.password.PasswordService
-import org.bronco.payments.services.processes.model.ProcessName
+import org.bronco.payments.services.processes.model.ProcessType
 import org.bronco.payments.services.processes.model.ProgressType
 import org.bronco.payments.utils.DateUtils.convertStringToLocalDate
 import org.springframework.stereotype.Service
@@ -84,39 +81,16 @@ open class PaymentsCustomerService(
 
     override suspend fun createNewCustomer(
         processId: UUID,
+        parentProcessId: UUID?,
         customerRequest: CreateCustomerRequest
     ): CreateCustomerResponse =
         withContext(CoroutineName("createNewCustomerOrRetrieveExisting")) {
 
-            val customerId = UUID.randomUUID()
-
             val userCreation = async {
-                customerRepository.createUser(customerId, customerRequest.toNewCustomerData)
+                customerRepository.createUser(UUID.randomUUID(), customerRequest.toNewCustomerData)
             }
-            val customerData = userCreation.await()
-            launch {
-                val key = ProgressKey(processId, ProcessName.CREATE_CUSTOMER)
-                if (customerData.errorMessage.isNullOrBlank()) {
-                    progressRepository.updateProgress(key, ProgressType.FINISHED, customerId, customerData.errorMessage)
-                } else {
-                    progressRepository.updateProgress(
-                        key,
-                        ProgressType.FINISHED_WITH_ERROR,
-                        customerId,
-                        customerData.errorMessage
-                    )
-                }
-            }
-            if (customerData.errorMessage.isNullOrBlank()) {
-                async {
-                    runCatching { accountService.createNewAccountOrRetrieveAllExistingAccounts(customerId, processId) }
-                        .getOrNull()?.let { accounts ->
-                            customerData.toCreateCustomerResponse(accounts)
-                        }
-                }.await() ?: customerData.toCreateCustomerResponse
-            } else {
-                customerData.toCreateCustomerResponse
-            }
+
+            provideResponseFromCustomerCreation(processId, parentProcessId, userCreation)
         }
 
     override suspend fun executeIfFound(
@@ -151,4 +125,55 @@ open class PaymentsCustomerService(
 
     private fun CustomerData.toRetrievalResponse(accounts: List<AccountData> = emptyList()): RetrieveCustomerResponse =
         this.toRetrievalResponse.copy(accounts = accounts.map { account -> account.toDto() })
+
+    private suspend fun provideResponseFromCustomerCreation(
+        processId: UUID,
+        parentProcessId: UUID?,
+        deferredCustomerData: Deferred<CustomerData>
+    ): CreateCustomerResponse = coroutineScope {
+        val customerData = deferredCustomerData.await()
+        updateCustomerCreationProgress(processId, parentProcessId, customerData)
+
+        if (customerData.errorMessage.isNullOrBlank()) {
+            runCatching {
+                accountService.createAccountForABrandNewCustomer(
+                    customerData.customerId!!,
+                    parentProcessId
+                )
+            }
+                .getOrNull()?.let { accounts ->
+                    customerData.toCreateCustomerResponse(accounts)
+                }
+                ?: customerData.toCreateCustomerResponse
+        } else {
+            customerData.toCreateCustomerResponse
+        }
+    }
+
+    private fun CoroutineScope.updateCustomerCreationProgress(
+        processId: UUID,
+        parentProcessId: UUID?,
+        customerData: CustomerData
+    ) {
+        launch {
+            val properties = ProcessProgressProperties.of(
+                processId = processId,
+                parentProcessId = parentProcessId,
+                processType = ProcessType.CREATE_CUSTOMER,
+                progressType = ProgressType.FINISHED,
+                entityId = customerData.customerId
+            )
+
+            if (customerData.errorMessage.isNullOrBlank()) {
+                progressRepository.updateProgress(properties)
+            } else {
+                progressRepository.updateProgress(
+                    properties.copy(
+                        progressType = ProgressType.FINISHED_WITH_ERROR,
+                        progressDetails = customerData.errorMessage
+                    )
+                )
+            }
+        }
+    }
 }
