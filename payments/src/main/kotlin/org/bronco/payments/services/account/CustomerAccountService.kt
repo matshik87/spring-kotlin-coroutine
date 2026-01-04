@@ -81,12 +81,12 @@ class CustomerAccountService(
         commands: List<CreateCustomerAccountCommand>
     ): List<ProcessProgressDetails> {
         return commands.map { request ->
-            val processProgressProperties = ofInitial(ProcessType.CREATE_CUSTOMER_ACCOUNT, parentProcessId)
-            progressRepository.initiateProgress(processProgressProperties)
+            val properties = ofInitial(ProcessType.CREATE_CUSTOMER_ACCOUNT, parentProcessId)
+            progressRepository.initiateProgress(properties)
             AccountCreationData(
                 customerId = customerId,
-                processId = processProgressProperties.id,
-                parentProcessId = processProgressProperties.parentProcessId,
+                processId = properties.id,
+                parentProcessId = properties.parentProcessId,
                 currencyCode = request.currencyCode,
                 accountName = request.accountName,
             )

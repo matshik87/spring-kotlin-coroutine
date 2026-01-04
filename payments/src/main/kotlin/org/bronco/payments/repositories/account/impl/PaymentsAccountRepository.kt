@@ -9,6 +9,7 @@ import org.bronco.payments.repositories.account.AccountRepository
 import org.bronco.payments.repositories.account.model.AccountData
 import org.bronco.payments.repositories.account.model.AccountStatus
 import org.bronco.payments.schema.jooq.model.tables.Account
+import org.bronco.payments.services.account.model.AccountCreationData
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
 import org.jooq.kotlin.coroutines.transactionCoroutine
@@ -27,30 +28,41 @@ open class PaymentsAccountRepository(
 
     private fun table(): Account = Account.ACCOUNT
 
-    override suspend fun createNewAccount(customerId: UUID): AccountData = coroutineScope {
+    override suspend fun createNewAccount(request: AccountCreationData): AccountData = coroutineScope {
         coroutineScope {
             context.transactionCoroutine { transactional ->
                 val transaction = DSL.using(transactional)
                 val table = table()
                 val accountRecord = transaction.newRecord(table).apply {
                     id = UUID.randomUUID()
-                    currencyCode = Currencies.USD.name
+                    currencyCode = request.currencyCode
                     status = AccountStatus.INACTIVE.name
                     balance = BigDecimal.ZERO.setScale(2)
                     creationDate = LocalDateTime.now()
-                    customerReference = customerId
+                    customerReference = request.customerId
+                    name = request.accountName
                 }
                 transaction.batchInsert(accountRecord).executeAsync()
                     .handleAsync { results, throwable ->
                         if (throwable != null || results.first() != 1) {
-                            logger.error("An account could not be created for customer $customerId", throwable)
+                            logger.error("An account could not be created for customer $request", throwable)
                             throw ResourceCreationException(ResourceType.ACCOUNT)
                         }
-                        logger.info("An account was successfully created for customer $customerId")
+                        logger.info("An account was successfully created for customer $request")
                         accountRecord.into(AccountData::class.java)
                     }.await()
             }
         }
+    }
+
+    override suspend fun createNewAccount(customerId: UUID): AccountData = coroutineScope {
+        createNewAccount(
+            AccountCreationData(
+                customerId = customerId,
+                processId = UUID.randomUUID(),
+                currencyCode = Currencies.USD.name
+            )
+        )
     }
 
     override suspend fun getCustomerAccountsByStatus(

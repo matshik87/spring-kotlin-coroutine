@@ -73,9 +73,11 @@ class CustomerKafkaIntegrationTest {
 
     @BeforeEach
     fun setUp() {
-        val createCustomer = kafkaProperties.consumers.findTopic(createCustomerTopic)
-        adminClient.deleteTopics(listOf(createCustomer.topicName))
-        adminClient.createTopics(listOf(NewTopic(createCustomer.topicName, 1, 1)))
+        val topics = kafkaProperties.consumers.topics.map { it.topicName }
+        adminClient.deleteTopics(topics)
+        topics.forEach { topicName ->
+            adminClient.createTopics(listOf(NewTopic(topicName, 1, 1)))
+        }
         dslContext.deleteFrom(PROCESS_PROGRESS)
         dslContext.deleteFrom(ACCOUNT)
         dslContext.deleteFrom(CUSTOMER)
