@@ -87,7 +87,7 @@ open class ProcessProgressRepository(
         return retrieveDetails(processId)
     }
 
-    override suspend fun findProcessDetailsForProcessNamesByIds(
+    override suspend fun findProcessDetailsForProcessTypesByIds(
         processTypes: Collection<ProcessType>,
         processId: UUID?,
         parentProcessId: UUID?
@@ -96,9 +96,11 @@ open class ProcessProgressRepository(
         return runInTransaction { transaction ->
             val query = selectQuery(transaction)
 
-            query.addConditions(
-                PROCESS_PROGRESS.PROCESS_TYPE.`in`(processTypes.map { it.name })
-            )
+            if (processTypes.isNotEmpty()) {
+                query.addConditions(
+                    PROCESS_PROGRESS.PROCESS_TYPE.`in`(processTypes.map { it.name })
+                )
+            }
             processId?.let { query.addConditions(PROCESS_PROGRESS.PROCESS_ID.eq(it)) }
             parentProcessId?.let { query.addConditions(PROCESS_PROGRESS.PROCESS_PARENT_ID.eq(it)) }
             query.fetchInto(ProcessProgressDetails::class.java)
@@ -110,17 +112,12 @@ open class ProcessProgressRepository(
         parentProcessId: UUID? = null,
         processType: ProcessType? = null,
     ): List<ProcessProgressDetails> {
-        return runInTransaction { transaction ->
-            val query = selectQuery(transaction)
-            query.addConditions(PROCESS_PROGRESS.PROCESS_ID.eq(processId))
-            processType?.let { instance ->
-                query.addConditions(PROCESS_PROGRESS.PROCESS_TYPE.eq(instance.name))
-            }
-            parentProcessId?.let { id ->
-                query.addConditions(PROCESS_PROGRESS.PROCESS_PARENT_ID.eq(id))
-            }
-            query.fetchInto(ProcessProgressDetails::class.java)
-        }
+        val processTypeList = processType?.let { listOf(it) } ?: emptyList()
+        return findProcessDetailsForProcessTypesByIds(
+            processTypes = processTypeList,
+            processId = processId,
+            parentProcessId = parentProcessId
+        )
     }
 
     private fun selectQuery(transaction: DSLContext): SelectQuery<Record> {

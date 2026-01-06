@@ -138,7 +138,7 @@ open class ProcessProgressRepositoryDataTest {
         runTest {
             val progressKeyId = UUID.randomUUID()
 
-            val result = repository.findProcessDetailsForProcessNamesByIds(
+            val result = repository.findProcessDetailsForProcessTypesByIds(
                 listOf(ProcessType.UPDATE_CUSTOMER),
                 processId = progressKeyId
             )
@@ -156,7 +156,7 @@ open class ProcessProgressRepositoryDataTest {
         )
         val expectedResponse = repository.initiateProgress(processProperties)
 
-        val result = repository.findProcessDetailsForProcessNamesByIds(listOf(processType), processId = progressKeyId)
+        val result = repository.findProcessDetailsForProcessTypesByIds(listOf(processType), processId = progressKeyId)
         Assertions.assertThat(result).singleElement()
             .usingRecursiveComparison().isEqualTo(expectedResponse)
     }
@@ -164,7 +164,7 @@ open class ProcessProgressRepositoryDataTest {
     @Test
     fun `findProcessDetailsForProcessNamesByIds - no matching process was found then empty response is returned`() =
         runTest {
-            val result = repository.findProcessDetailsForProcessNamesByIds(
+            val result = repository.findProcessDetailsForProcessTypesByIds(
                 listOf(ProcessType.UPDATE_CUSTOMER),
                 parentProcessId = UUID.randomUUID()
             )
@@ -181,7 +181,7 @@ open class ProcessProgressRepositoryDataTest {
             .copy(progressDetails = progressDetails)
         val expectedResponse = repository.initiateProgress(properties)
 
-        val result = repository.findProcessDetailsForProcessNamesByIds(
+        val result = repository.findProcessDetailsForProcessTypesByIds(
             listOf(processType),
             parentProcessId = parentProcessId
         )
@@ -193,7 +193,7 @@ open class ProcessProgressRepositoryDataTest {
     fun `findProcessDetailsForProcessNamesByIds - for no id passed, an exception is thrown`() = runTest {
         Assertions.assertThatThrownBy {
             runBlocking {
-                repository.findProcessDetailsForProcessNamesByIds(
+                repository.findProcessDetailsForProcessTypesByIds(
                     listOf(ProcessType.CREATE_CUSTOMER)
                 )
             }
