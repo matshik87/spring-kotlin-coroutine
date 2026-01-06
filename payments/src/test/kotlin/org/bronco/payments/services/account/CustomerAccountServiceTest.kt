@@ -225,7 +225,7 @@ class CustomerAccountServiceTest {
         val parentProcessId = UUID.randomUUID()
         val accountId = UUID.randomUUID()
 
-        coEvery { processProgressRepository.findProcessDetailsForProcessNamesByIds(any(), processId, isNull()) } returns listOf(
+        coEvery { processProgressRepository.findProcessDetailsForProcessTypesByIds(any(), processId, isNull()) } returns listOf(
             generateProcessProgressDetails(
                 processId,
                 parentProcessId,
@@ -267,7 +267,7 @@ class CustomerAccountServiceTest {
     fun getAccountsByProcessId_whenNoProcessWasFound_thenEmptyListIsReturned() = runTest {
         val processId = UUID.randomUUID()
 
-        coEvery { processProgressRepository.findProcessDetailsForProcessNamesByIds(any(), processId, isNull()) } returns emptyList()
+        coEvery { processProgressRepository.findProcessDetailsForProcessTypesByIds(any(), processId, isNull()) } returns emptyList()
         coEvery { accountRepository.getByIds(any()) } returns emptyList()
 
         val accounts = customerAccountService.getAccountsByProcessId(processId)
@@ -281,7 +281,7 @@ class CustomerAccountServiceTest {
         val processId = UUID.randomUUID()
         val parentProcessId = UUID.randomUUID()
 
-        coEvery { processProgressRepository.findProcessDetailsForProcessNamesByIds(any(), processId, isNull()) } returns listOf(
+        coEvery { processProgressRepository.findProcessDetailsForProcessTypesByIds(any(), processId, isNull()) } returns listOf(
             generateProcessProgressDetails(
                 processId,
                 parentProcessId,
@@ -362,7 +362,7 @@ class CustomerAccountServiceTest {
         val parentProcessId = UUID.randomUUID()
         val accountId = UUID.randomUUID()
 
-        coEvery { processProgressRepository.findProcessDetailsForProcessNamesByIds(any(), isNull(), parentProcessId) } returns listOf(
+        coEvery { processProgressRepository.findProcessDetailsForProcessTypesByIds(any(), isNull(), parentProcessId) } returns listOf(
             generateProcessProgressDetails(
                 process1,
                 parentProcessId,

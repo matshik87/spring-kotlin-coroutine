@@ -110,7 +110,7 @@ class CustomerAccountKafkaIntegrationTest {
 
         await().atMost(8, TimeUnit.SECONDS).until {
             runBlocking {
-                progressRepository.findProcessDetailsForProcessNamesByIds(
+                progressRepository.findProcessDetailsForProcessTypesByIds(
                     processTypes = listOf(ProcessType.CREATE_CUSTOMER_ACCOUNT),
                     parentProcessId = parentProcessId
                 ).all { it.progress == ProgressType.FINISHED.name }
@@ -118,7 +118,7 @@ class CustomerAccountKafkaIntegrationTest {
             }
         }
 
-        val result = progressRepository.findProcessDetailsForProcessNamesByIds(
+        val result = progressRepository.findProcessDetailsForProcessTypesByIds(
             processTypes = listOf(ProcessType.CREATE_CUSTOMER_ACCOUNT),
             parentProcessId = parentProcessId
         )
@@ -153,7 +153,7 @@ class CustomerAccountKafkaIntegrationTest {
 
         await().atMost(8, TimeUnit.SECONDS).until {
             runBlocking {
-                progressRepository.findProcessDetailsForProcessNamesByIds(
+                progressRepository.findProcessDetailsForProcessTypesByIds(
                     processTypes = listOf(ProcessType.CREATE_CUSTOMER_ACCOUNT),
                     parentProcessId = parentProcessId
                 ).all { it.progress == ProgressType.FINISHED.name }
@@ -192,7 +192,7 @@ class CustomerAccountKafkaIntegrationTest {
 
         await().atMost(8, TimeUnit.SECONDS).until {
             runBlocking {
-                progressRepository.findProcessDetailsForProcessNamesByIds(
+                progressRepository.findProcessDetailsForProcessTypesByIds(
                     processTypes = listOf(ProcessType.CREATE_CUSTOMER_ACCOUNT),
                     parentProcessId = parentProcessId
                 ).all { it.progress == ProgressType.FINISHED_WITH_ERROR.name }
@@ -200,7 +200,7 @@ class CustomerAccountKafkaIntegrationTest {
             }
         }
 
-        val result = progressRepository.findProcessDetailsForProcessNamesByIds(
+        val result = progressRepository.findProcessDetailsForProcessTypesByIds(
             processTypes = listOf(ProcessType.CREATE_CUSTOMER_ACCOUNT),
             parentProcessId = parentProcessId
         )

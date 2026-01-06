@@ -82,7 +82,7 @@ class AccountKafkaListener(
                 null
             }
         }
-        return progressRepository.findProcessDetailsForProcessNamesByIds(
+        return progressRepository.findProcessDetailsForProcessTypesByIds(
             processTypes = processTypes,
             processId = processId,
             parentProcessId = parentProcessId

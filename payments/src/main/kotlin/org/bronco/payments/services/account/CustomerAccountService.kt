@@ -123,7 +123,7 @@ class CustomerAccountService(
 
     override suspend fun getAccountsByProcessId(processId: UUID): List<AccountData> {
         val accountIds: Set<UUID> = getAccountIdsForProcesses(
-            progressRepository.findProcessDetailsForProcessNamesByIds(
+            progressRepository.findProcessDetailsForProcessTypesByIds(
                 createdAccountStatuses,
                 processId = processId
             )
@@ -133,7 +133,7 @@ class CustomerAccountService(
 
     override suspend fun getAccountsByParentProcessId(parentProcessId: UUID): List<AccountData> {
         val accountIds: Set<UUID> = getAccountIdsForProcesses(
-            progressRepository.findProcessDetailsForProcessNamesByIds(
+            progressRepository.findProcessDetailsForProcessTypesByIds(
                 createdAccountStatuses,
                 parentProcessId = parentProcessId
             )
