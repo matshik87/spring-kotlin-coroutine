@@ -100,7 +100,6 @@ payments:
       client-id: payments-client
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
-
       topics:
         -
           <<: *createCustomerTopic
