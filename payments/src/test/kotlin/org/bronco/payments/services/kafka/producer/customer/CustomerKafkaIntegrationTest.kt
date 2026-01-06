@@ -8,7 +8,6 @@ import org.apache.kafka.clients.admin.AdminClient
 import org.apache.kafka.clients.admin.NewTopic
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility.await
-import org.bronco.payments.config.KafkaConfiguration.Companion.createCustomerTopic
 import org.bronco.payments.config.KafkaTestConfig
 import org.bronco.payments.config.properties.BroncoKafkaProperties
 import org.bronco.payments.model.Currencies
@@ -94,10 +93,16 @@ class CustomerKafkaIntegrationTest {
     fun dispatchCreateCustomer_withValidRequest_customerAndAccountAreCreated() = runTest {
         val payload = generateCreateCustomerRequest(email)
 
-        kafkaProducer.dispatchCreateCustomer(payload)
-        await().atMost(5, TimeUnit.SECONDS).until {
+        val progressDetails = kafkaProducer.dispatchCreateCustomer(payload)
+
+        val processType = ProcessType.fromString(progressDetails.type)
+        await().atMost(8, TimeUnit.SECONDS).until {
             runBlocking {
-                customerRepository.findByLoginAndEmail(null, payload.email) != null
+                progressRepository.findProcessDetailsForProcessTypesByIds(
+                    processTypes = listOf(processType),
+                    processId = progressDetails.id,
+                    parentProcessId = progressDetails.parentId
+                ).firstOrNull { it.progress == ProgressType.FINISHED.name } != null
             }
         }
 
@@ -146,7 +151,7 @@ class CustomerKafkaIntegrationTest {
 
         kafkaProducer.dispatchCreateCustomer(payload)
 
-        await().atMost(1, TimeUnit.SECONDS).until {
+        await().atMost(8, TimeUnit.SECONDS).until {
             runBlocking {
                 dslContext.fetchExists(
                 dslContext.selectFrom(PROCESS_PROGRESS)

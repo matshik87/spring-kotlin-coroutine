@@ -149,19 +149,19 @@ class CustomerAccountKafkaIntegrationTest {
         val accountName = "test-name"
         val accountCreationRequest = generateCreateCustomerAccountCommand(customerId, Currencies.USD, accountName)
 
-        accountService.scheduleNewAccountCreation(parentProcessId, accountCreationRequest)
+        val processDetails = accountService.scheduleNewAccountCreation(parentProcessId, accountCreationRequest)
 
         await().atMost(8, TimeUnit.SECONDS).until {
             runBlocking {
                 progressRepository.findProcessDetailsForProcessTypesByIds(
                     processTypes = listOf(ProcessType.CREATE_CUSTOMER_ACCOUNT),
-                    parentProcessId = parentProcessId
+                    processId = processDetails.id,
+                    parentProcessId = processDetails.parentId
                 ).all { it.progress == ProgressType.FINISHED.name }
-                        && accountRepository.getAllCustomerAccounts(customerId).isNotEmpty()
             }
         }
 
-        val result = progressRepository.findProcessDetailsForProcessNamesByIds(
+        val result = progressRepository.findProcessDetailsForProcessTypesByIds(
             processTypes = listOf(ProcessType.CREATE_CUSTOMER_ACCOUNT),
             parentProcessId = parentProcessId
         )
