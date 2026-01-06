@@ -6,6 +6,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.bronco.payments.repositories.progress.ProgressRepository
 import org.bronco.payments.services.account.AccountService
 import org.bronco.payments.services.account.model.AccountCreationData
+import org.bronco.payments.services.processes.model.ProcessProgressDetails
 import org.bronco.payments.services.processes.model.ProcessType
 import org.bronco.payments.services.processes.model.ProgressType
 import org.bronco.payments.utils.KafkaCommons.PARENT_PROCESS_ID_KEY
@@ -39,27 +40,52 @@ class AccountKafkaListener(
         @Header(PARENT_PROCESS_ID_KEY) parentProcessKey: String?
     ) = coroutineScope {
         if (ProcessType.CREATE_CUSTOMER_ACCOUNT.name == processTypeKey) {
-            val processType = ProcessType.fromString(processTypeKey)
             val processId = UUID.fromString(processIdKey)
-            val processDetails = progressRepository.retrieveProcessDetailsByName(processId, processType)
-            when (val progressType = ProgressType.fromString(processDetails?.progress)) {
-                ProgressType.DISPATCHED -> {
-                    accountService.createNewAccount(objectReader.readValue(record.value(), AccountCreationData::class.java))
-                }
-                else -> {
-                    if (progressType.terminal) {
-                        logger.info("Process [$processTypeKey, processId: $processIdKey, parentProcessId: $parentProcessKey] was finalized.")
-                    } else if (progressType == ProgressType.IN_PROGRESS) {
-                        logger.info("Processing of request [$processTypeKey, processId: $processIdKey, parentProcessId: $parentProcessKey] is ongoing. Skipping processing...")
-                    } else {
-                        logger.warn("Unsupported progress type was received: $progressType, processId: $processId, parentProcessId: $parentProcessKey")
-                    }
-                }
-            }
+            val processDetails = retrieveProcessDetails(processId, parentProcessKey)
+            handleNewAccountPayload(processDetails, record, processTypeKey, processIdKey, parentProcessKey, processId)
         } else {
             logger.warn(
                 "Unsupported process type was received at ${record.topic()}: [$processTypeKey, processId: $processIdKey, parentProcessId: $parentProcessKey]"
             )
         }
+    }
+
+    private suspend fun handleNewAccountPayload(
+        processDetails: ProcessProgressDetails?,
+        record: ConsumerRecord<String, String>,
+        processTypeKey: String,
+        processIdKey: String,
+        parentProcessKey: String?,
+        processId: UUID?
+    ) = when (val progressType = ProgressType.fromString(processDetails?.progress)) {
+        ProgressType.DISPATCHED -> {
+            accountService.createNewAccount(objectReader.readValue(record.value(), AccountCreationData::class.java))
+        }
+
+        else -> {
+            if (progressType.terminal) {
+                logger.info("Process [$processTypeKey, processId: $processIdKey, parentProcessId: $parentProcessKey] was finalized.")
+            } else if (progressType == ProgressType.IN_PROGRESS) {
+                logger.info("Processing of request [$processTypeKey, processId: $processIdKey, parentProcessId: $parentProcessKey] is ongoing. Skipping processing...")
+            } else {
+                logger.warn("Unsupported progress type was received: $progressType, processId: $processId, parentProcessId: $parentProcessKey")
+            }
+        }
+    }
+
+    private suspend fun retrieveProcessDetails(processId: UUID, parentProcessKey: String?): ProcessProgressDetails? {
+        val processTypes = listOf(ProcessType.CREATE_CUSTOMER_ACCOUNT)
+        val parentProcessId = parentProcessKey?.let { value ->
+            if (value.isNotBlank()) {
+                UUID.fromString(value)
+            } else {
+                null
+            }
+        }
+        return progressRepository.findProcessDetailsForProcessNamesByIds(
+            processTypes = processTypes,
+            processId = processId,
+            parentProcessId = parentProcessId
+        ).firstOrNull { ProcessType.CREATE_CUSTOMER_ACCOUNT.name == it.type }
     }
 }

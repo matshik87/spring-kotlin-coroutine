@@ -35,18 +35,16 @@ class CustomerAccountKafkaProducer(
 
     override suspend fun dispatchCreateCustomerAccount(payload: AccountCreationData): ProcessProgressDetails {
         requireNotNull(payload, { "Request payload for customer creation is required" })
-        val processId = UUID.randomUUID()
-        val kafkaRecord = prepareCreateCustomerAccountRecord(processId, payload)
+        val kafkaRecord = prepareCreateCustomerAccountRecord(payload)
         val processDetails = processRepository.updateProgress(payload.toProcessProperties())
         kafkaTemplate.send(kafkaRecord)
         return processDetails
     }
 
     private fun prepareCreateCustomerAccountRecord(
-        progressId: UUID,
         payload: AccountCreationData
     ): ProducerRecord<String, String> {
-        val progressUuid = progressId.toString()
+        val progressUuid = payload.processId.toString()
         val headers = listOf(
             RecordHeader(PROCESS_TYPE_KEY, ProcessType.CREATE_CUSTOMER_ACCOUNT.name.toByteArray()),
             RecordHeader(PROCESS_ID_KEY, progressUuid.toByteArray()),

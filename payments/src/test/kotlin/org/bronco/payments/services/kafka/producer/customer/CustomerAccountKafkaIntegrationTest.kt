@@ -104,7 +104,7 @@ class CustomerAccountKafkaIntegrationTest {
         val newCustomerData = generateCustomerData()
         val customer = customerRepository.createUser(UUID.randomUUID(), newCustomerData)
         val customerId = customer.customerId!!
-        val accountCreationRequest = generateCreateCustomerAccountCommand(customerId, Currencies.USD)
+        val accountCreationRequest = generateCreateCustomerAccountCommand(customerId)
 
         accountService.scheduleNewAccountCreation(parentProcessId, accountCreationRequest)
 
