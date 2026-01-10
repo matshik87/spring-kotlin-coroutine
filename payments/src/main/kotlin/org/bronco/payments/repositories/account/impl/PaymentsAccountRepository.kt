@@ -35,7 +35,7 @@ open class PaymentsAccountRepository(
                 val table = table()
                 val accountRecord = transaction.newRecord(table).apply {
                     id = UUID.randomUUID()
-                    currencyCode = request.currencyCode
+                    currencyCode = Currencies.of(request.currencyCode).name
                     status = AccountStatus.INACTIVE.name
                     balance = BigDecimal.ZERO.setScale(2)
                     creationDate = LocalDateTime.now()

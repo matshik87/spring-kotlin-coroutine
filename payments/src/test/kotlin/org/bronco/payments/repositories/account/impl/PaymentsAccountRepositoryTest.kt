@@ -15,6 +15,7 @@ import org.bronco.payments.repositories.customer.impl.PaymentsCustomerRepository
 import org.bronco.payments.schema.jooq.model.tables.records.CustomerRecord
 import org.bronco.payments.schema.jooq.model.tables.references.ACCOUNT
 import org.bronco.payments.schema.jooq.model.tables.references.CUSTOMER
+import org.bronco.payments.utils.CustomerDataGenerators.generateAccountCreationData
 import org.bronco.payments.utils.CustomerDataGenerators.generateCustomerData
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
@@ -69,6 +70,29 @@ open class PaymentsAccountRepositoryTest {
 
         assertThat(listOf(result)).usingRecursiveComparison()
             .isEqualTo(repository.getCustomerAccountsByStatus(customerId, setOf(AccountStatus.INACTIVE)))
+    }
+
+    @Test
+    fun createNewAccount_whenAccountCreationDataWasCorrect_thenCustomerIsCreated() = runTest {
+        val customer = generateCustomer(UUID.randomUUID())
+        val customerId = customer.customerId!!
+        val accountCreationData = generateAccountCreationData(customerId, UUID.randomUUID(), Currencies.USD.name)
+
+        val result = repository.createNewAccount(accountCreationData)
+
+        assertThat(listOf(result)).usingRecursiveComparison()
+            .isEqualTo(repository.getCustomerAccountsByStatus(customerId, setOf(AccountStatus.INACTIVE)))
+    }
+
+    @Test
+    fun createNewAccount_whenUnsupportedCurrency_exceptionIsThrown() = runTest {
+        val currencyCode = "GBP"
+        val customerId = UUID.randomUUID()
+        val accountCreationData = generateAccountCreationData(customerId, UUID.randomUUID(), currencyCode)
+
+        assertThatThrownBy { runBlocking { repository.createNewAccount(accountCreationData) } }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessage("Currency $currencyCode not found")
     }
 
     @Test

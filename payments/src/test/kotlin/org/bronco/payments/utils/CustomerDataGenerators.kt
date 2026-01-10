@@ -5,6 +5,7 @@ import org.bronco.payments.controllers.api.CreateCustomerRequest
 import org.bronco.payments.controllers.api.RetrieveCustomerResponse
 import org.bronco.payments.model.Currencies
 import org.bronco.payments.repositories.customer.CustomerData
+import org.bronco.payments.services.account.model.AccountCreationData
 import org.bronco.payments.services.account.model.CreateCustomerAccountCommand
 import org.bronco.payments.utils.TemporalUtils.LOCAL_DATE_FORMATTER
 import java.time.LocalDate
@@ -85,6 +86,20 @@ object CustomerDataGenerators {
     ): CreateCustomerAccountCommand = CreateCustomerAccountCommand(
         customerId = customerId,
         currencyCode = currency.name,
+        accountName = accountName
+    )
+
+    fun generateAccountCreationData(
+        customerId: UUID,
+        processId: UUID,
+        currencyCode: String,
+        parentProcessId: UUID? = null,
+        accountName: String? = null
+    ): AccountCreationData = AccountCreationData(
+        customerId = customerId,
+        processId = processId,
+        currencyCode = currencyCode,
+        parentProcessId = parentProcessId,
         accountName = accountName
     )
 }
