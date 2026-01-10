@@ -1,4 +1,5 @@
 type: collection.insomnia.rest/5.0
+schema_version: "5.1"
 name: payment service
 meta:
   id: wrk_b321d7fa8c2a4fe2ac72153349c48fcc
@@ -119,7 +120,6 @@ collection:
         headers:
           - name: User-Agent
             value: insomnia/10.3.1
-            id: pair_b2dc422341764c31b73abbd84e0bc412
         settings:
           renderRequestBody: true
           encodeUrl: true
@@ -136,7 +136,7 @@ collection:
         meta:
           id: req_7d9e318152634b6ba2822ca129f8ccf5
           created: 1749920637638
-          modified: 1760278678994
+          modified: 1768046473232
           isPrivate: false
           description: ""
           sortKey: -1746672289387
@@ -145,22 +145,21 @@ collection:
           mimeType: application/json
           text: |-
             {
-            	"firstName": "Marko",
-            	"middleName": "Constantine",
-            	"lastName": "Polo",
-            	"dateOfBirth": "12-05-2007",
-            	"nationality": "PT",
+            	"firstName": "Testus",
+            	"middleName": "Kuropatwa",
+            	"lastName": "Polon",
+            	"dateOfBirth": "01-04-2007",
+            	"nationality": "ES",
             	"countryOfResidence": "ES",
-            	"email": "marko.polo@sth4.pt",
-            	"phoneNumber": "+351211231343",
-            	"secondaryPhoneNumber": "+34646123324"
+            	"email": "testus.polon@sth4.es",
+            	"phoneNumber": "+351211231344",
+            	"secondaryPhoneNumber": "+34646123326"
             }
         headers:
           - name: Content-Type
             value: application/json
           - name: User-Agent
             value: insomnia/10.3.1
-            id: pair_b2dc422341764c31b73abbd84e0bc412
         settings:
           renderRequestBody: true
           encodeUrl: true
@@ -182,7 +181,7 @@ collection:
         meta:
           id: req_a628043ba52a4ad1858abddef1e0c3e5
           created: 1754208903608
-          modified: 1761994354386
+          modified: 1767695224383
           isPrivate: false
           description: ""
           sortKey: -1746972830072
@@ -190,7 +189,6 @@ collection:
         headers:
           - name: User-Agent
             value: insomnia/10.3.1
-            id: pair_b2dc422341764c31b73abbd84e0bc412
         settings:
           renderRequestBody: true
           encodeUrl: true
@@ -271,7 +269,7 @@ collection:
         meta:
           id: req_ea8bf0f451d548b6b5de29165c1de709
           created: 1761993930470
-          modified: 1761996628648
+          modified: 1768046643553
           isPrivate: false
           description: ""
           sortKey: -1761993930470
@@ -289,13 +287,13 @@ collection:
           rebuildPath: true
         pathParameters:
           - name: id
-            value: e370b88f-7731-4d16-b16d-d5f842f1944e
+            value: 9ff93841-0496-482c-9d61-ef88cdaae988
       - url: "{{ _['payment-url'] }}/api/accounts/:id"
         name: get by account id
         meta:
           id: req_bc319c1ad82d4b1ab436821897ed9432
           created: 1761996610712
-          modified: 1761996646041
+          modified: 1768046347231
           isPrivate: false
           description: ""
           sortKey: -1761095012036.5
@@ -313,13 +311,13 @@ collection:
           rebuildPath: true
         pathParameters:
           - name: id
-            value: 0c4ab10a-34d6-468e-ae9a-73da1ee9be72
+            value: b4c79868-2821-4fee-bdb0-94274555f0b4
       - url: "{{ _['payment-url'] }}/api/accounts/process/:id"
         name: get by process id
         meta:
           id: req_6e1bb0a6b6e941dca8f41f546725d10d
           created: 1762078037961
-          modified: 1762078130314
+          modified: 1768046793919
           isPrivate: false
           description: ""
           sortKey: -1760645552819.75
@@ -337,7 +335,102 @@ collection:
           rebuildPath: true
         pathParameters:
           - name: id
-            value: 7ef53b3d-6f72-474b-9ab4-9cb78edc9849
+            value: 8ab3973d-c17f-4b26-931c-e294cef8d831
+      - url: "{{ _['payment-url'] }}/api/accounts/process/parent/:id"
+        name: get by parent process id
+        meta:
+          id: req_67c75e9e49ac40c5a3536c1598c9dfac
+          created: 1768046585850
+          modified: 1768047563532
+          isPrivate: false
+          description: ""
+          sortKey: -1760420823211.375
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/11.6.2
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+        pathParameters:
+          - name: id
+            value: 7e806ea5-2906-4a81-8eed-4470d49e7224
+      - url: "{{ _['payment-url'] }}/api/accounts/create"
+        name: schedule account creation
+        meta:
+          id: req_4d90b7e09078479db647535536ff9c22
+          created: 1768046662771
+          modified: 1768046742513
+          isPrivate: false
+          description: ""
+          sortKey: -1760308458407.1875
+        method: PUT
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"customerId": "9ff93841-0496-482c-9d61-ef88cdaae988",
+            	"currencyCode": "USD",
+            	"accountName": "test-single"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/11.6.2
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _['payment-url'] }}/api/accounts/create/batch"
+        name: schedule batch account creation
+        meta:
+          id: req_5af8b52df8844cf68bf214b0c9417f30
+          created: 1768046880951
+          modified: 1768047537645
+          isPrivate: false
+          description: ""
+          sortKey: -1760252276005.0938
+        method: PUT
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"requests": [
+            		{
+            			"customerId": "9ff93841-0496-482c-9d61-ef88cdaae988",
+            			"currencyCode": "USD",
+            			"accountName": "test-dupa1"
+            		},
+            		{
+            			"customerId": "9ff93841-0496-482c-9d61-ef88cdaae988",
+            			"currencyCode": "GBP",
+            			"accountName": "test-dupa2"
+            		}
+            	]
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/11.6.2
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
 cookieJar:
   name: Default Jar
   meta:

@@ -15,23 +15,27 @@ import org.bronco.payments.model.ResourceNotFoundException
 import org.bronco.payments.model.ResourceType
 import org.bronco.payments.repositories.account.model.toApiResponse
 import org.bronco.payments.services.account.CustomerAccountService
+import org.bronco.payments.services.account.model.BatchAccountCreation
+import org.bronco.payments.services.account.model.BatchAccountCreationResponse
+import org.bronco.payments.services.account.model.CreateCustomerAccountCommand
+import org.bronco.payments.services.processes.model.ProcessProgressDetails
 import org.bronco.payments.validation.customer.ValidUuid
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import java.util.*
+import io.swagger.v3.oas.annotations.parameters.RequestBody as ApiRequestBody
 
 //TODO: create account managements by the means of
+//TODO: add test cases, add test cases to process controller
 /*
- - 4. user can create an account for existing customer(process uuid is returned) --- in process
+ - 4. user can create an account(main process uuid is returned) --- ok, add tests
  - 2. user can retrieve an account by uuid - ok
  - 3. user can retrieve an accounts by process id - ok
  - 1. user can retrieve all accounts by customer id - ok
  - 6. closing an account ---
- - 5. modifying an account/s ---
+ - 5. modifying an account/s(activation etc) ---
  */
 @Tag(name = "accounts", description = "Operations manages users' accounts")
 @RestController
@@ -157,8 +161,7 @@ open class AccountController(
         method = "GET",
         tags = ["accounts"],
         summary = """
-            Retrieves accounts by process progress id. It may be a parent process progress id,
-             like when creating a customer, or an actual account creation progress id.
+            Retrieves an account by process progress id. Otherwise, an empty list is returned.
             """,
         parameters = [
             Parameter(
@@ -170,7 +173,7 @@ open class AccountController(
             ApiResponse(
                 responseCode = "200",
                 description = """
-                    When process and accounts were found then populated response is returned.
+                    When an account for specified process id was found, then returned list includes that account.
                     Otherwise, an empty response is returned.
                     """,
                 content = [
@@ -197,53 +200,82 @@ open class AccountController(
     suspend fun retrieveAccountsByProcessId(
         @ValidUuid @PathVariable("id") processId: String,
     ): ResponseEntity<List<AccountResponse>> = coroutineScope {
-        val payload = accountService.getAccountsForProcessId(UUID.fromString(processId))
+        val payload = accountService.getAccountsByProcessId(UUID.fromString(processId))
             .map { it.toApiResponse() }
         ResponseEntity.ok(payload)
     }
 
-    /*@Operation(
-        method = "POST",
+    @Operation(
+        method = "GET",
         tags = ["accounts"],
         summary = """
-            Successful request with process UUID and process name results with either a response with process details or
-            Bad Request is returned. The result response may include entity id, if such id was included. In case of 
-            failed processing, a detailed error message is being included. The entity Id may be included, if such was
-            persisted during the process.
+            Retrieves accounts by parent process progress id. Otherwise, an empty list is returned.
             """,
         parameters = [
             Parameter(
-                name = "processName", `in` = ParameterIn.PATH, description = "Process type name", required = true,
-                examples = [ExampleObject(value = "CREATE_CUSTOMER")],
-                schema = Schema(type = "string", implementation = ProcessName::class)
-            ),
-            Parameter(
-                name = "processId",
-                `in` = ParameterIn.PATH,
-                description = "UUID identifying a process",
-                required = true,
-                examples = [ExampleObject(value = "05b3b0f6-85af-4593-9bd1-eaa182702405")],
+                name = "id", `in` = ParameterIn.PATH, description = "process progress id", required = true,
                 schema = Schema(type = "uuid")
-            )
+            ),
         ],
         responses = [
             ApiResponse(
                 responseCode = "200",
-                description = "A payload describing the state of a process",
+                description = """
+                    When an account for specified parent process id was found, then returned list includes those account.
+                    Otherwise, an empty response is returned.
+                    """,
                 content = [
                     Content(
                         mediaType = "application/json",
-                        schema = Schema(oneOf = [ProcessProgressDetails::class])
+                        schema = Schema(implementation = AccountResponse::class)
                     )
                 ]
             ),
             ApiResponse(
-                responseCode = "404",
-                description = "Process could not be found",
+                responseCode = "400",
+                description = "Request is invalid. Most probably invalid uuid",
                 content = [
                     Content(
                         mediaType = "application/json",
                         schema = Schema(implementation = PaymentsErrorResponse::class)
+                    )
+                ]
+            )
+        ]
+    )
+    @Validated
+    @GetMapping(path = ["/process/parent/{id}"])
+    suspend fun retrieveAccountsByParentProcessId(
+        @ValidUuid @PathVariable("id") parentProcessId: String,
+    ): ResponseEntity<List<AccountResponse>> = coroutineScope {
+        val payload = accountService.getAccountsByParentProcessId(UUID.fromString(parentProcessId))
+            .map { it.toApiResponse() }
+        ResponseEntity.ok(payload)
+    }
+
+    @Operation(
+        method = "PUT",
+        tags = ["accounts"],
+        summary = """
+            This endpoint schedules an account creation for specified payload.
+             The returned process details describes the result.
+            """,
+        requestBody = ApiRequestBody(
+            required = true,
+            description = "Payload describing an account",
+            content = [Content(
+                mediaType = "application/json",
+                schema = Schema(implementation = CreateCustomerAccountCommand::class)
+            )]
+        ),
+        responses = [
+            ApiResponse(
+                responseCode = "202",
+                description = "A payload describing process details for account creation",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = ProcessProgressDetails::class)
                     )
                 ]
             ),
@@ -260,14 +292,62 @@ open class AccountController(
         ]
     )
     @Validated
-    @PostMapping(path = ["/open"])
-    suspend fun retrieveDetailsForProcessId(
-        @ValidUuid @PathVariable processId: String
-    ): ResponseEntity<List<ProcessProgressDetails>> = coroutineScope {
-        val processUuid = UUID.fromString(processId)
-        repository.retrieveProcessDetails(UUID.fromString(processId))
-            ?.let { response ->
-                ResponseEntity.ok(response)
-            } ?: throw ResourceNotFoundException(processUuid, ResourceType.PROCESS)
-    }*/
+    @PutMapping(path = ["/create"])
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    suspend fun scheduleAccountCreation(
+        @RequestBody payload: CreateCustomerAccountCommand
+    ): ProcessProgressDetails = coroutineScope {
+        accountService.scheduleNewAccountCreation(UUID.randomUUID(), payload)
+    }
+
+    @Operation(
+        method = "PUT",
+        tags = ["accounts"],
+        summary = """
+            This endpoint schedules batch account creation as per provided payload, that describes all accounts.
+             The returned process details describes the result.
+            """,
+        requestBody = ApiRequestBody(
+            required = true,
+            description = "Batch definition of account creation.",
+            content = [Content(
+                mediaType = "application/json",
+                schema = Schema(implementation = BatchAccountCreation::class)
+            )]
+        ),
+        responses = [
+            ApiResponse(
+                responseCode = "202",
+                description = "A payload describing process details for batch account creation",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+
+                        schema = Schema(implementation = BatchAccountCreationResponse::class)
+                    )
+                ]
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Request was invalid. The details are provided in the response.",
+                content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = PaymentsErrorResponse::class)
+                    )
+                ]
+            )
+        ]
+    )
+    @Validated
+    @PutMapping(path = ["/create/batch"])
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    suspend fun scheduleNewAccountsCreation(
+        @RequestBody batch: BatchAccountCreation
+    ): BatchAccountCreationResponse = coroutineScope {
+        BatchAccountCreationResponse(batch.requests.groupBy { it.customerId }
+            .map { (customerId, requests) ->
+                customerId to accountService.scheduleNewAccountCreation(UUID.randomUUID(), customerId, requests)
+            }.toMap())
+    }
 }
