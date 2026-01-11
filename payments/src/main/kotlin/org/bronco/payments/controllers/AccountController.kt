@@ -27,8 +27,6 @@ import org.springframework.web.bind.annotation.*
 import java.util.*
 import io.swagger.v3.oas.annotations.parameters.RequestBody as ApiRequestBody
 
-//TODO: create account managements by the means of
-//TODO: add test cases, add test cases to process controller
 /*
  - 4. user can create an account(main process uuid is returned) --- ok, add tests
  - 2. user can retrieve an account by uuid - ok
