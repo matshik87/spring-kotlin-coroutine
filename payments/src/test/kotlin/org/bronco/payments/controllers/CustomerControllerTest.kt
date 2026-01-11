@@ -15,7 +15,7 @@ import org.bronco.payments.model.ResourceType
 import org.bronco.payments.repositories.ResourceCouldNotBeenRemoved
 import org.bronco.payments.services.customer.CustomerService
 import org.bronco.payments.services.kafka.producer.customer.CustomerKafkaProducer
-import org.bronco.payments.services.processes.model.ProcessName
+import org.bronco.payments.services.processes.model.ProcessType
 import org.bronco.payments.services.processes.model.ProcessProgressDetails
 import org.bronco.payments.services.processes.model.ProgressType
 import org.bronco.payments.utils.CustomerDataGenerators.generateCreateCustomerRequest
@@ -34,6 +34,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.reactive.function.BodyInserters
 import java.util.*
 
+//TODO: test and update it
 @ExtendWith(SpringExtension::class)
 @WebFluxTest(
     controllers = [CustomerController::class],
@@ -60,7 +61,7 @@ class CustomerControllerTest {
     fun createCustomer_whenValidRequest_then204WithProgressDetailsIsReturned() = runTest {
         val requestPayload = generateCreateCustomerRequest("test-email@test.com")
         val processProgressDetails = ProcessProgressDetails(
-            UUID.randomUUID(), ProcessName.CREATE_CUSTOMER.name,
+            UUID.randomUUID(), ProcessType.CREATE_CUSTOMER.name, null,
             ProgressType.INITIALIZED.name, null, details = "no details"
         )
         coEvery { customerKafkaProducer.dispatchCreateCustomer(any(CreateCustomerRequest::class)) } returns processProgressDetails

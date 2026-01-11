@@ -7,4 +7,6 @@
     <include file="db/changeSets/progress-table.sql"/>
     <include file="db/changeSets/add_residence_country_code_to_customer.sql"/>
     <include file="db/changeSets/add_account_table.sql"/>
+    <include file="db/changeSets/add-process-parent-id-to-progress-table.sql"/>
+    <include file="db/changeSets/renaming_progress_columns.sql"/>
 </databaseChangeLog>

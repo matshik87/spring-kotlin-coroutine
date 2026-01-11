@@ -15,6 +15,7 @@ import org.bronco.payments.repositories.customer.impl.PaymentsCustomerRepository
 import org.bronco.payments.schema.jooq.model.tables.records.CustomerRecord
 import org.bronco.payments.schema.jooq.model.tables.references.ACCOUNT
 import org.bronco.payments.schema.jooq.model.tables.references.CUSTOMER
+import org.bronco.payments.utils.CustomerDataGenerators.generateAccountCreationData
 import org.bronco.payments.utils.CustomerDataGenerators.generateCustomerData
 import org.jooq.DSLContext
 import org.jooq.impl.DSL
@@ -72,6 +73,29 @@ open class PaymentsAccountRepositoryTest {
     }
 
     @Test
+    fun createNewAccount_whenAccountCreationDataWasCorrect_thenCustomerIsCreated() = runTest {
+        val customer = generateCustomer(UUID.randomUUID())
+        val customerId = customer.customerId!!
+        val accountCreationData = generateAccountCreationData(customerId, UUID.randomUUID(), Currencies.USD.name)
+
+        val result = repository.createNewAccount(accountCreationData)
+
+        assertThat(listOf(result)).usingRecursiveComparison()
+            .isEqualTo(repository.getCustomerAccountsByStatus(customerId, setOf(AccountStatus.INACTIVE)))
+    }
+
+    @Test
+    fun createNewAccount_whenUnsupportedCurrency_exceptionIsThrown() = runTest {
+        val currencyCode = "GBP"
+        val customerId = UUID.randomUUID()
+        val accountCreationData = generateAccountCreationData(customerId, UUID.randomUUID(), currencyCode)
+
+        assertThatThrownBy { runBlocking { repository.createNewAccount(accountCreationData) } }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessage("Currency $currencyCode not found")
+    }
+
+    @Test
     fun getCustomerAccountsByStatus_whenNoAccountsForCustomer_returnEmptyList() = runTest {
         val customerId = UUID.randomUUID()
 
@@ -121,6 +145,53 @@ open class PaymentsAccountRepositoryTest {
         val result = repository.getAllCustomerAccounts(customerId)
 
         assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun getById_whenCustomerHasAnAccount_accountIsCreated() = runTest {
+        val customer = generateCustomer(UUID.randomUUID())
+        val customerId = customer.customerId!!
+        val account = generateAccount(customerId, AccountStatus.BLOCKED, accountBalance = BigDecimal("14.23"))
+
+        val result = repository.getById(account.accountId)
+
+        assertThat(result)
+            .usingRecursiveComparison()
+            .isEqualTo(account)
+    }
+
+    @Test
+    fun getById_whenNoAccountExists_nullIsReturned() = runTest {
+        val accountId = UUID.randomUUID()
+
+        val result = repository.getById(accountId)
+
+        assertThat(result).isNull()
+    }
+
+    @Test
+    fun getByIds_whenNoAccountExists_emptyListIsReturned() = runTest {
+        val accountId = UUID.randomUUID()
+
+        val result = repository.getByIds(listOf(accountId))
+
+        assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun getByIds_whenAccountsExist_allAccountsAreReturned() = runTest {
+        val customer = generateCustomer(UUID.randomUUID())
+        val customerId = customer.customerId!!
+        val expectation = listOf(
+            generateAccount(customerId, AccountStatus.BLOCKED, accountBalance = BigDecimal("14.23")),
+            generateAccount(customerId, AccountStatus.OPEN, accountBalance = BigDecimal("24.13"))
+        )
+        val accountIds = expectation.map { it.accountId }
+
+        val result = repository.getByIds(accountIds)
+
+        assertThat(result).hasSize(expectation.size)
+            .usingRecursiveComparison().isEqualTo(expectation)
     }
 
     private suspend fun generateCustomer(customerId: UUID? = null): CustomerData = coroutineScope {
@@ -175,7 +246,7 @@ open class PaymentsAccountRepositoryTest {
             transaction.batchInsert(accountRecord).executeAsync()
                 .handleAsync { results, throwable ->
                     if (throwable != null || results.first() != 1) {
-                        fail<String>("Account instance is required")
+                        fail<String>("Account instance is required: ${throwable.cause?.message}")
                     }
                     accountRecord.into(AccountData::class.java)
                 }.await()

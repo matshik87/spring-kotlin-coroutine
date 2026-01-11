@@ -17,14 +17,14 @@ import org.bronco.payments.repositories.account.model.AccountStatus
 import org.bronco.payments.repositories.account.model.toDto
 import org.bronco.payments.repositories.customer.CustomerData
 import org.bronco.payments.repositories.customer.CustomerRepository
-import org.bronco.payments.repositories.progress.ProgressKey
 import org.bronco.payments.repositories.progress.ProgressRepository
 import org.bronco.payments.services.account.AccountService
 import org.bronco.payments.services.login.PaymentsLoginService
 import org.bronco.payments.services.password.PasswordService
-import org.bronco.payments.services.processes.model.ProcessName
+import org.bronco.payments.services.processes.model.ProcessType
 import org.bronco.payments.services.processes.model.ProgressType
 import org.bronco.payments.utils.AccountDataGenerators.generateAccount
+import org.bronco.payments.utils.AssertionUtils.assertProgressProperties
 import org.bronco.payments.utils.CustomerDataGenerators.generateCreateCustomerRequest
 import org.bronco.payments.utils.CustomerDataGenerators.generateCustomerData
 import org.junit.jupiter.api.Test
@@ -105,8 +105,8 @@ class PaymentsCustomerServiceTest {
     @Test
     fun createNewCustomer_whenCustomerWasCreatedWithoutIssues_thenProcessIsSetAsFinishedAndCreateResponseIsReturned() =
         runTest {
-            val processId = UUID.randomUUID()
-            val key = ProgressKey(processId, ProcessName.CREATE_CUSTOMER)
+            val parentProcessId = UUID.randomUUID()
+            val customerId = UUID.randomUUID()
             val customerRequest = generateCreateCustomerRequest()
             val customerData = generateCustomerData(null)
             val accountId = UUID.randomUUID()
@@ -119,16 +119,20 @@ class PaymentsCustomerServiceTest {
                 UUID.randomUUID()
             )
             coEvery { repository.createUser(any(UUID::class), any(CustomerData::class)) } coAnswers {
-                val customerId = it.invocation.args[0] as UUID
                 customerData.copy(customerId = customerId)
             }
             coEvery { loginService.generateLogin { any() } } returns customerData.login
             coEvery { passwordService.encode(any()) } returns customerData.password!!
-            coEvery { accountService.createNewAccountOrRetrieveAllExistingAccounts(any(), processId) } returns listOf(accountData)
+            coEvery { accountService.createAccountForABrandNewCustomer(any(), parentProcessId) } returns listOf(accountData)
 
-            val result = service.createNewCustomer(processId, customerRequest)
+            val result = service.createNewCustomer(parentProcessId, parentProcessId, customerRequest)
 
-            coVerify { progressRepository.updateProgress(key, ProgressType.FINISHED, any(), null) }
+            coVerify { progressRepository.updateProgress(assertProgressProperties(
+                ProcessType.CREATE_CUSTOMER,
+                ProgressType.FINISHED,
+                parentProcessId,
+                entityId = customerId
+            )) }
             assertThat(result).isNotNull()
                 .returns(customerData.login) { it.login }
                 .returns(customerData.email) { it.email }
@@ -142,21 +146,31 @@ class PaymentsCustomerServiceTest {
     @Test
     fun createNewCustomer_whenCustomerWasCreatedWithoutIssuesButFailedToCreateAccount_thenProcessIsSetAsFinishedAndCreateResponseIsReturned() =
         runTest {
-            val processId = UUID.randomUUID()
-            val key = ProgressKey(processId, ProcessName.CREATE_CUSTOMER)
+            val parentProcessId = UUID.randomUUID()
+            val customerId = UUID.randomUUID()
             val customerRequest = generateCreateCustomerRequest()
-            val customerData = generateCustomerData(null)
+            val customerData = generateCustomerData(customerId)
             coEvery { repository.createUser(any(UUID::class), any(CustomerData::class)) } coAnswers {
-                val customerId = it.invocation.args[0] as UUID
-                customerData.copy(customerId = customerId)
+                customerData
             }
             coEvery { loginService.generateLogin { any() } } returns customerData.login
             coEvery { passwordService.encode(any()) } returns customerData.password!!
-            coEvery { accountService.createNewAccountOrRetrieveAllExistingAccounts(any()) } throws RuntimeException("sth failed")
+            coEvery {
+                accountService.createAccountForABrandNewCustomer(
+                    customerId,
+                    parentProcessId
+                )
+            } throws RuntimeException("sth failed")
 
-            val result = service.createNewCustomer(processId, customerRequest)
+            val result = service.createNewCustomer(parentProcessId, parentProcessId, customerRequest)
 
-            coVerify { progressRepository.updateProgress(key, ProgressType.FINISHED, any(), null) }
+            coVerify { progressRepository.updateProgress(assertProgressProperties(
+                ProcessType.CREATE_CUSTOMER,
+                ProgressType.FINISHED,
+                parentProcessId,
+                entityId = customerId
+            )) }
+            coVerify { accountService.createAccountForABrandNewCustomer(result.customerId!!, parentProcessId) }
             assertThat(result).isNotNull()
                 .returns(customerData.login) { it.login }
                 .returns(customerData.email) { it.email }
@@ -170,33 +184,29 @@ class PaymentsCustomerServiceTest {
     @Test
     fun createNewCustomer_whenCustomerWasNotCreated_thenProcessIsSetAsFinishedWithErrors() =
         runTest {
-            val processId = UUID.randomUUID()
-            val key = ProgressKey(processId, ProcessName.CREATE_CUSTOMER)
+            val parentProcessId = UUID.randomUUID()
             val customerRequest = generateCreateCustomerRequest()
             val customerData = generateCustomerData(errorMessage = "sth went wrong")
             coEvery { repository.createUser(any(UUID::class), any(CustomerData::class)) } coAnswers {
-                val customerId = it.invocation.args[0] as UUID
-                customerData.copy(customerId = customerId)
+                customerData
             }
             coEvery { loginService.generateLogin { any() } } returns customerData.login
             coEvery { passwordService.encode(any()) } returns customerData.password!!
 
-            val result = service.createNewCustomer(processId, customerRequest)
+            val result = service.createNewCustomer(parentProcessId, parentProcessId, customerRequest)
 
-            coVerify {
-                progressRepository.updateProgress(
-                    key,
-                    ProgressType.FINISHED_WITH_ERROR,
-                    any(),
-                    customerData.errorMessage
-                )
-            }
+            coVerify { progressRepository.updateProgress(assertProgressProperties(
+                ProcessType.CREATE_CUSTOMER,
+                ProgressType.FINISHED_WITH_ERROR,
+                parentProcessId,
+                errorMessage = customerData.errorMessage
+            )) }
             assertThat(result).isNotNull()
                 .returns(customerData.login) { it.login }
                 .returns(customerData.email) { it.email }
                 .returns(true) { it.activeAccount }
                 .returns(true) { it.requiresPasswordChange }
                 .returns(customerData.errorMessage) { it.errorDescription }
-            assertThat(result.customerId).isNotNull()
+            assertThat(result.customerId).isNull()
         }
 }

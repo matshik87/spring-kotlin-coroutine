@@ -76,9 +76,9 @@ open class ProcessProgress(
     val PROCESS_ID: TableField<ProcessProgressRecord, UUID?> = createField(DSL.name("process_id"), SQLDataType.UUID.nullable(false), this, "")
 
     /**
-     * The column <code>payments.process_progress.process_name</code>.
+     * The column <code>payments.process_progress.process_type</code>.
      */
-    val PROCESS_NAME: TableField<ProcessProgressRecord, String?> = createField(DSL.name("process_name"), SQLDataType.VARCHAR(25).nullable(false), this, "")
+    val PROCESS_TYPE: TableField<ProcessProgressRecord, String?> = createField(DSL.name("process_type"), SQLDataType.VARCHAR(25).nullable(false), this, "")
 
     /**
      * The column <code>payments.process_progress.progress</code>.
@@ -104,6 +104,11 @@ open class ProcessProgress(
      * The column <code>payments.process_progress.modification_date</code>.
      */
     val MODIFICATION_DATE: TableField<ProcessProgressRecord, LocalDateTime?> = createField(DSL.name("modification_date"), SQLDataType.LOCALDATETIME(6).nullable(false), this, "")
+
+    /**
+     * The column <code>payments.process_progress.process_parent_id</code>.
+     */
+    val PROCESS_PARENT_ID: TableField<ProcessProgressRecord, UUID?> = createField(DSL.name("process_parent_id"), SQLDataType.UUID, this, "")
 
     private constructor(alias: Name, aliased: Table<ProcessProgressRecord>?): this(alias, null, null, null, aliased, null, null)
     private constructor(alias: Name, aliased: Table<ProcessProgressRecord>?, parameters: Array<Field<*>?>?): this(alias, null, null, null, aliased, parameters, null)

@@ -3,7 +3,10 @@ package org.bronco.payments.utils
 import org.apache.commons.lang3.RandomStringUtils
 import org.bronco.payments.controllers.api.CreateCustomerRequest
 import org.bronco.payments.controllers.api.RetrieveCustomerResponse
+import org.bronco.payments.model.Currencies
 import org.bronco.payments.repositories.customer.CustomerData
+import org.bronco.payments.services.account.model.AccountCreationData
+import org.bronco.payments.services.account.model.CreateCustomerAccountCommand
 import org.bronco.payments.utils.TemporalUtils.LOCAL_DATE_FORMATTER
 import java.time.LocalDate
 import java.util.*
@@ -75,4 +78,28 @@ object CustomerDataGenerators {
             passwordChangeRequired = customerData.passwordChangeRequired
         )
     }
+
+    fun generateCreateCustomerAccountCommand(
+        customerId: UUID,
+        currency: Currencies = Currencies.USD,
+        accountName: String? = null
+    ): CreateCustomerAccountCommand = CreateCustomerAccountCommand(
+        customerId = customerId,
+        currencyCode = currency.name,
+        accountName = accountName
+    )
+
+    fun generateAccountCreationData(
+        customerId: UUID,
+        processId: UUID,
+        currencyCode: String,
+        parentProcessId: UUID? = null,
+        accountName: String? = null
+    ): AccountCreationData = AccountCreationData(
+        customerId = customerId,
+        processId = processId,
+        currencyCode = currencyCode,
+        parentProcessId = parentProcessId,
+        accountName = accountName
+    )
 }
